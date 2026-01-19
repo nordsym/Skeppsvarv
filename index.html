@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Skeppa.nu - Öppnar Februari 2026</title>
+    <title>Skeppa.nu | Öppnar Februari 2026</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300;400;600&family=Source+Code+Pro:wght@400&display=swap" rel="stylesheet">
+    <!-- Stilrena fonter -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300;400;500&family=Source+Code+Pro:wght@400&display=swap" rel="stylesheet">
     
     <!-- SUPABASE SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -21,27 +22,27 @@
             --bg-color: #050608;
             --text-primary: #FFFFFF;
             --text-secondary: #94A3B8;
-            --chalk-line: rgba(255, 255, 255, 0.8);
-            --glass-bg: rgba(12, 14, 18, 0.6);
-            --glass-blur: 12px;
-            --cyan: #00D4FF;
+            --chalk-line: rgba(255, 255, 255, 0.15);
+            --glass-bg: rgba(10, 10, 10, 0.4);
+            --glass-blur: 20px;
+            --accent: #38BDF8; /* Sky Blue */
             --btn-bg: #FFFFFF;
             --btn-text: #050608;
-            --nebula-opacity: 0.4;
+            --nebula-opacity: 0.3;
             --error-color: #ef4444;
             --success-color: #22c55e;
         }
 
         /* LIGHT MODE (The Blueprint) */
         body.light-theme {
-            --bg-color: #F0F4F8;
-            --text-primary: #0F172A;
-            --text-secondary: #475569;
-            --chalk-line: #94A3B8;
-            --glass-bg: #FFFFFF;
-            --glass-blur: 0px;
-            --cyan: #0284C7;
-            --btn-bg: #0F172A; 
+            --bg-color: #FAFAFA;
+            --text-primary: #171717;
+            --text-secondary: #525252;
+            --chalk-line: rgba(0, 0, 0, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-blur: 20px;
+            --accent: #0284C7;
+            --btn-bg: #171717; 
             --btn-text: #FFFFFF;
             --nebula-opacity: 0;
         }
@@ -63,6 +64,7 @@
             min-height: 100vh;
             position: relative;
             transition: color 0.5s ease;
+            font-weight: 300;
         }
 
         /* BAKGRUNDS-LAGER */
@@ -77,7 +79,7 @@
         body::before {
             content: "";
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
             pointer-events: none; z-index: -1;
         }
 
@@ -86,8 +88,8 @@
             position: fixed;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 80vw; height: 80vh;
-            background: radial-gradient(circle, rgba(0, 212, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+            width: 70vw; height: 70vh;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, rgba(0,0,0,0) 60%);
             opacity: var(--nebula-opacity);
             transition: opacity 0.5s ease;
             z-index: -4;
@@ -99,9 +101,9 @@
         .blueprint-grid {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-image: 
-                linear-gradient(rgba(148, 163, 184, 0.4) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(148, 163, 184, 0.4) 1px, transparent 1px);
-            background-size: 40px 40px;
+                linear-gradient(rgba(0,0,0, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
             z-index: -4;
             opacity: 0;
             transition: opacity 0.5s ease;
@@ -114,66 +116,64 @@
         /* PANEL */
         .glass-panel {
             background: var(--glass-bg);
-            border: 2px solid var(--chalk-line);
+            border: 1px solid var(--chalk-line);
             backdrop-filter: blur(var(--glass-blur));
             -webkit-backdrop-filter: blur(var(--glass-blur));
-            border-radius: 1rem;
+            border-radius: 2px;
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-        }
-        body.light-theme .glass-panel {
-            border-color: var(--text-secondary); 
-            box-shadow: 8px 8px 0px rgba(15, 23, 42, 0.15);
         }
 
         /* BUTTON */
         .btn-submit {
             width: 100%;
-            padding: 16px 20px;
+            padding: 14px 20px;
             background-color: var(--btn-bg);
             color: var(--btn-text);
-            border: 2px solid var(--btn-bg);
-            border-radius: 0.5rem;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
+            border: 1px solid var(--btn-bg);
+            border-radius: 2px;
+            font-weight: 600; /* Lite fetare för versalerna */
+            font-size: 0.95rem;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-            box-shadow: 0 4px 20px rgba(0,0,0, 0.1);
+            transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            letter-spacing: 0.05em; /* Lite extra spacing för versaler */
+            text-transform: uppercase;
         }
         .btn-submit:not(:disabled):hover {
-            transform: translateY(-2px);
-            box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
-            background-color: transparent;
-            color: var(--btn-bg);
-        }
-        body.light-theme .btn-submit:not(:disabled):hover {
-            box-shadow: 4px 4px 0px rgba(15, 23, 42, 0.2);
-            color: var(--text-primary);
-            border-color: var(--text-primary);
+            opacity: 0.9;
+            transform: translateY(-1px);
         }
         .btn-submit:disabled {
-            opacity: 0.7;
+            opacity: 0.6;
             cursor: not-allowed;
-            transform: none !important;
+        }
+
+        /* Input styling */
+        input#email {
+            border: 1px solid var(--chalk-line);
+            border-radius: 2px;
+            font-weight: 300;
+            transition: border-color 0.3s ease;
+        }
+        input#email:focus {
+            border-color: var(--accent);
         }
 
         /* FORM FEEDBACK */
         .status-message {
             margin-top: 1rem;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             min-height: 1.5rem;
-            transition: all 0.3s ease;
-            font-weight: 500;
+            font-weight: 400;
+            letter-spacing: 0.01em;
         }
         .status-error { color: var(--error-color); }
         .status-success { color: var(--success-color); }
 
-        /* Starfall (Dark Mode Only) */
+        /* Starfall */
         canvas {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -5;
             transition: opacity 0.5s ease;
@@ -181,9 +181,9 @@
         body.light-theme canvas { opacity: 0; }
 
         /* THEME SWITCH */
-        .theme-switch { --toggle-size: 10px; --container-width: 5.625em; --container-height: 2.5em; --container-radius: 6.25em; --container-light-bg: #3D7EAE; --container-night-bg: #1D1F2C; --circle-container-diameter: 3.375em; --sun-moon-diameter: 2.125em; --sun-bg: #ECCA2F; --moon-bg: #C4C9D1; --spot-color: #959DB1; --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1); --stars-color: #fff; --clouds-color: #F3FDFF; --back-clouds-color: #AACADF; --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25); --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17); }
+        .theme-switch { --toggle-size: 10px; --container-width: 5.625em; --container-height: 2.5em; --container-radius: 6.25em; --container-light-bg: #E2E8F0; --container-night-bg: #1D1F2C; --circle-container-diameter: 3.375em; --sun-moon-diameter: 2.125em; --sun-bg: #ECCA2F; --moon-bg: #C4C9D1; --spot-color: #959DB1; --circle-container-offset: calc((var(--circle-container-diameter) - var(--container-height)) / 2 * -1); --stars-color: #fff; --clouds-color: #F3FDFF; --back-clouds-color: #AACADF; --transition: .5s cubic-bezier(0, -0.02, 0.4, 1.25); --circle-transition: .3s cubic-bezier(0, -0.02, 0.35, 1.17); }
         .theme-switch, .theme-switch *, .theme-switch *::before, .theme-switch *::after { -webkit-box-sizing: border-box; box-sizing: border-box; margin: 0; padding: 0; font-size: var(--toggle-size); }
-        .theme-switch__container { width: var(--container-width); height: var(--container-height); background-color: var(--container-light-bg); border-radius: var(--container-radius); overflow: hidden; cursor: pointer; box-shadow: 0em -0.062em 0.062em rgba(0, 0, 0, 0.25), 0em 0.062em 0.125em rgba(255, 255, 255, 0.94); transition: var(--transition); position: relative; border: 1px solid rgba(255,255,255,0.2); }
+        .theme-switch__container { width: var(--container-width); height: var(--container-height); background-color: var(--container-light-bg); border-radius: var(--container-radius); overflow: hidden; cursor: pointer; transition: var(--transition); position: relative; border: 1px solid rgba(128,128,128,0.2); }
         .theme-switch__container::before { content: ""; position: absolute; z-index: 1; inset: 0; box-shadow: 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset, 0em 0.05em 0.187em rgba(0, 0, 0, 0.25) inset; border-radius: var(--container-radius) }
         .theme-switch__checkbox { display: none; }
         .theme-switch__circle-container { width: var(--circle-container-diameter); height: var(--circle-container-diameter); background-color: rgba(255, 255, 255, 0.1); position: absolute; left: var(--circle-container-offset); top: var(--circle-container-offset); border-radius: var(--container-radius); box-shadow: inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), inset 0 0 0 3.375em rgba(255, 255, 255, 0.1), 0 0 0 0.625em rgba(255, 255, 255, 0.1), 0 0 0 1.25em rgba(255, 255, 255, 0.1); display: flex; transition: var(--circle-transition); pointer-events: none; }
@@ -236,50 +236,46 @@
     </div>
 
     <div class="glass-panel p-8 md:p-12 max-w-lg w-full text-center relative z-10 mt-10">
-        <!-- Logo Text -->
+        <!-- Logo Text (H1 Nu) -->
         <div class="mb-10 flex flex-col items-center justify-center">
-            <h2 class="text-4xl md:text-5xl font-serif text-[var(--text-primary)] tracking-tight mb-3 transition-colors">SKEPPA.NU</h2>
+            <h1 class="text-4xl md:text-5xl font-serif text-[var(--text-primary)] tracking-tight transition-colors">SKEPPA.NU</h1>
         </div>
 
         <!-- Status -->
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[var(--chalk-line)] bg-black/5 mb-6 backdrop-blur-sm transition-colors" style="border-color: var(--chalk-line);">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded border border-[var(--chalk-line)] bg-white/5 mb-8 backdrop-blur-sm transition-colors cursor-default" style="border-color: var(--chalk-line);">
             <span class="relative flex h-1.5 w-1.5">
-                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-yellow-500"></span>
+                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-[var(--accent)]"></span>
             </span>
             <span class="text-[10px] font-mono uppercase tracking-widest text-[var(--text-secondary)]">
                 Öppnar Februari 2026
             </span>
         </div>
 
-        <h1 class="text-4xl md:text-5xl text-[var(--text-primary)] mb-6 leading-tight transition-colors">
-            Sluta fila.<br>
-            <span class="text-transparent bg-clip-text bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)]">Börja skeppa.</span>
-        </h1>
-
-        <p class="text-[var(--text-secondary)] text-sm mb-8 leading-relaxed transition-colors">
-            <strong>Skeppa.nu</strong> är arenan där svenska AI-byggare går från idé till lansering. En utmaning, en månad, ett projekt. Oavsett om det är ett snabbt experiment för att lära dig nytt, eller första versionen av din affärsidé – här bygger vi momentum tillsammans.
+        <!-- COPY -->
+        <p class="text-[var(--text-secondary)] text-base mb-8 leading-relaxed transition-colors max-w-md mx-auto">
+            Börja skeppa kod med andra utvecklare. Ett nytt tema varje månad. Vi bygger med AI, skeppar live och samlar poäng.
         </p>
 
         <!-- Waitlist Form -->
         <form id="waitlist-form" class="flex flex-col gap-4">
-            <input type="email" id="email" placeholder="din@email.se" class="w-full bg-transparent border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] text-center focus:border-[var(--cyan)] focus:outline-none transition-colors placeholder-gray-500" required>
+            <input type="email" id="email" placeholder="din@email.se" class="w-full bg-transparent p-3 text-[var(--text-primary)] text-center focus:outline-none transition-colors placeholder-gray-500" required>
             
             <button type="submit" id="submit-btn" class="btn-submit">
                 <svg id="loading-spinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-current hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span id="btn-text">Säkra min plats</span>
+                <span id="btn-text">JAG ÄR MED</span>
             </button>
             
-            <!-- Status message area to prevent layout jumps -->
+            <!-- Status message -->
             <div id="form-status" class="status-message" aria-live="polite"></div>
         </form>
         
         <!-- LIVE COUNT INDICATOR -->
-        <div class="mt-6 flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] opacity-80 font-mono tracking-wide mb-2">
+        <div class="mt-8 flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] opacity-70 font-mono tracking-wide mb-2">
             <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-50"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
             </span>
             <span id="live-count">Räknar skeppare...</span>
@@ -298,7 +294,7 @@
         const SUPABASE_URL = 'https://qjouribmhkkhqdsieprs.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_UBSBWhsFeqVDFByq13yXNw_NkJGtR_d';
         
-        // Initialize client with a unique name to avoid collision with the window.supabase library
+        // Initialize client
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         // --- DOM ELEMENTS ---
@@ -313,23 +309,20 @@
         // --- LIVE COUNT LOGIC ---
         async function updateWaitlistCount() {
             try {
-                // Select * with head:true to get count without fetching all data (efficient)
+                // Notera: Räknaren läser fortfarande från 'waitlist' för att undvika komplexitet med Auth-räkning för publika användare.
+                // Vi dubbellagrar datan nedan för att lösa detta.
                 const { count, error } = await supabaseClient
                     .from('waitlist')
                     .select('*', { count: 'exact', head: true });
 
                 if (error) throw error;
-                
-                // Animate/Update number
-                liveCountDisplay.innerText = `${count || 0} skeppare`;
+                liveCountDisplay.innerText = `${count || 0} skeppare ombord`;
             } catch (err) {
                 console.error("Kunde inte hämta antal:", err);
-                // Fallback text if DB is unreachable
-                liveCountDisplay.innerText = "Söker skeppare..."; 
+                liveCountDisplay.innerText = "Letar skeppare..."; 
             }
         }
         
-        // Fetch count immediately on load
         updateWaitlistCount();
 
         // --- FORM SUBMISSION LOGIC ---
@@ -338,32 +331,39 @@
             const email = emailInput.value.trim();
             if (!email) return;
 
-            // UI: Loading State
             setLoading(true);
             statusMessage.innerText = "";
             statusMessage.className = "status-message";
 
             try {
-                const { error } = await supabaseClient
-                    .from('waitlist')
-                    .insert({ email: email });
+                // 1. Skapa kontot i Supabase Auth (Detta triggar "Confirm Signup"-mejlet)
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: crypto.randomUUID(), // Slumpat lösenord då vi bara vill åt mejlet/kontot
+                });
 
-                if (error) {
-                    if (error.code === '23505') { // Postgres code for Unique Violation
-                        showStatus("Du finns redan i loggboken! Skepp ohoj!", "error");
-                    } else {
-                        throw error;
-                    }
-                } else {
-                    // SUCCESS
-                    showStatus("Välkommen ombord! Vi hörs snart.", "success");
-                    emailInput.value = ""; // Clear input
-                    updateWaitlistCount(); // Refresh count immediately
+                if (authError) {
+                   if (authError.message.includes("already registered")) {
+                       showStatus("Du är redan registrerad! (Kolla skräpposten)", "error");
+                   } else {
+                       throw authError;
+                   }
+                   setLoading(false);
+                   return;
                 }
+
+                // 2. Lägg OCKSÅ till i 'waitlist' för att räknaren ska fungera publikt
+                // Vi ignorerar errors här ifall Auth lyckades men Insert failade (t.ex. dubblett)
+                await supabaseClient.from('waitlist').insert({ email: email });
+
+                // SUCCESS
+                showStatus("Välkommen ombord! Bekräftelse kommer på mejl.", "success");
+                emailInput.value = "";
+                updateWaitlistCount();
 
             } catch (err) {
                 console.error("Signup error:", err);
-                showStatus("Något gick fel. Försök igen senare.", "error");
+                showStatus("Något gick fel. Försök igen.", "error");
             } finally {
                 setLoading(false);
             }
@@ -374,10 +374,10 @@
             submitBtn.disabled = isLoading;
             if (isLoading) {
                 loadingSpinner.classList.remove('hidden');
-                btnText.innerText = "Skeppar iväg...";
+                btnText.innerText = "Registrerar...";
             } else {
                 loadingSpinner.classList.add('hidden');
-                btnText.innerText = "Säkra min plats";
+                btnText.innerText = "JAG ÄR MED";
             }
         }
 
