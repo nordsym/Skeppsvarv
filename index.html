@@ -400,19 +400,19 @@
             <!-- STATS GRID -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
                 <div class="glass-panel stat-card">
-                    <div class="stat-value">48</div>
-                    <div class="stat-label">Arkitekter</div>
+                    <div class="stat-value" id="stat-shippers">0</div>
+                    <div class="stat-label">Skeppare</div>
                 </div>
                 <div class="glass-panel stat-card">
-                    <div class="stat-value">12</div>
+                    <div class="stat-value" id="stat-ships">0</div>
                     <div class="stat-label">Sjösatta Skepp</div>
                 </div>
                 <div class="glass-panel stat-card">
-                    <div class="stat-value text-[var(--cyan)]">Jan</div>
+                    <div class="stat-value text-[var(--cyan)]" id="stat-batch">—</div>
                     <div class="stat-label">Månadens Batch</div>
                 </div>
                 <div class="glass-panel stat-card">
-                    <div class="stat-value">190</div>
+                    <div class="stat-value" id="stat-points">0</div>
                     <div class="stat-label">Poäng Utlöst</div>
                 </div>
             </div>
@@ -949,23 +949,29 @@
 
         async function loadDashboardData() {
             try {
-                // Load stats
-                const [profilesRes, submissionsRes, batchRes] = await Promise.all([
-                    supabase.from('profiles').select('id', { count: 'exact', head: true }),
-                    supabase.from('submissions').select('id, points_earned', { count: 'exact' }),
+                // Load stats from Supabase
+                const [submissionsRes, batchRes] = await Promise.all([
+                    supabase.from('submissions').select('user_id, points_earned'),
                     supabase.from('batches').select('*').eq('is_active', true).single()
                 ]);
 
-                // Update stats
-                const totalUsers = profilesRes.count || 0;
                 const submissions = submissionsRes.data || [];
-                const totalSubmissions = submissionsRes.count || 0;
+
+                // Skeppare = unika användare som har skeppat
+                const uniqueShippers = new Set(submissions.map(s => s.user_id)).size;
+                const totalSubmissions = submissions.length;
                 const totalPoints = submissions.reduce((sum, s) => sum + (s.points_earned || 0), 0);
 
-                document.querySelector('.stat-value:nth-of-type(1)')?.closest('.stat-card')?.querySelector('.stat-value')
-                    && (document.querySelectorAll('.stat-value')[0].textContent = totalUsers);
-                document.querySelectorAll('.stat-value')[1] && (document.querySelectorAll('.stat-value')[1].textContent = totalSubmissions);
-                document.querySelectorAll('.stat-value')[3] && (document.querySelectorAll('.stat-value')[3].textContent = totalPoints);
+                // Månadens batch
+                const batchMonth = batchRes.data?.month ?
+                    new Date(batchRes.data.month + '-01').toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '').toUpperCase() :
+                    '—';
+
+                // Update stats with IDs
+                document.getElementById('stat-shippers').textContent = uniqueShippers;
+                document.getElementById('stat-ships').textContent = totalSubmissions;
+                document.getElementById('stat-batch').textContent = batchMonth;
+                document.getElementById('stat-points').textContent = totalPoints;
 
                 // Load recent submissions
                 await loadRecentSubmissions();
