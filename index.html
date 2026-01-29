@@ -254,7 +254,7 @@
         /* Flip Clock */
         .flip-clock {
             display: flex;
-            gap: 0.75rem;
+            gap: 1rem;
             justify-content: center;
             perspective: 400px;
         }
@@ -265,53 +265,26 @@
         }
         .flip-card {
             position: relative;
-            width: 60px;
-            height: 70px;
-            perspective: 200px;
+            width: 70px;
+            height: 80px;
+            perspective: 300px;
         }
         .flip-card-inner {
             position: relative;
             width: 100%;
             height: 100%;
-        }
-        .flip-card .top,
-        .flip-card .bottom {
-            position: absolute;
-            width: 100%;
-            height: 50%;
-            overflow: hidden;
             background: var(--glass-bg);
             border: 2px solid var(--chalk-line);
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-        .flip-card .top {
-            top: 0;
-            border-radius: 6px 6px 0 0;
-            border-bottom: 1px solid var(--chalk-line);
-            align-items: flex-end;
-            padding-bottom: 2px;
-        }
-        .flip-card .bottom {
-            bottom: 0;
-            border-radius: 0 0 6px 6px;
-            border-top: none;
-            align-items: flex-start;
-            padding-top: 2px;
-        }
-        .flip-card .top::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 5%;
-            width: 90%;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--chalk-line), transparent);
+            transform-style: preserve-3d;
+            transition: transform 0.4s ease-out;
         }
         .flip-card .number {
             font-family: 'DM Serif Display', serif;
-            font-size: 2.5rem;
+            font-size: 2.8rem;
             font-weight: bold;
             color: var(--text-primary);
             line-height: 1;
@@ -324,23 +297,27 @@
             margin-top: 0.5rem;
         }
         /* Flip animation */
-        .flip-card.flipping .top {
-            animation: flipTop 0.3s ease-in forwards;
+        .flip-card.flipping .flip-card-inner {
+            animation: flipCard 0.5s ease-in-out;
         }
-        .flip-card.flipping .bottom {
-            animation: flipBottom 0.3s 0.15s ease-out forwards;
-        }
-        @keyframes flipTop {
+        @keyframes flipCard {
             0% { transform: rotateX(0deg); }
-            100% { transform: rotateX(-90deg); }
-        }
-        @keyframes flipBottom {
-            0% { transform: rotateX(90deg); }
+            50% { transform: rotateX(-90deg); }
             100% { transform: rotateX(0deg); }
         }
-        body.light-theme .flip-card .top,
-        body.light-theme .flip-card .bottom {
+        body.light-theme .flip-card-inner {
             background: rgba(255,255,255,0.8);
+        }
+        /* Subtle shadow for depth */
+        .flip-card-inner::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 5%;
+            width: 90%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--chalk-line), transparent);
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -471,8 +448,7 @@
                     <div class="flip-segment">
                         <div class="flip-card" id="flip-days">
                             <div class="flip-card-inner">
-                                <div class="top"><span class="number">02</span></div>
-                                <div class="bottom"><span class="number">02</span></div>
+                                <span class="number">02</span>
                             </div>
                         </div>
                         <div class="flip-label">Dagar</div>
@@ -480,8 +456,7 @@
                     <div class="flip-segment">
                         <div class="flip-card" id="flip-hours">
                             <div class="flip-card-inner">
-                                <div class="top"><span class="number">00</span></div>
-                                <div class="bottom"><span class="number">00</span></div>
+                                <span class="number">00</span>
                             </div>
                         </div>
                         <div class="flip-label">Timmar</div>
@@ -489,8 +464,7 @@
                     <div class="flip-segment">
                         <div class="flip-card" id="flip-mins">
                             <div class="flip-card-inner">
-                                <div class="top"><span class="number">00</span></div>
-                                <div class="bottom"><span class="number">00</span></div>
+                                <span class="number">00</span>
                             </div>
                         </div>
                         <div class="flip-label">Minuter</div>
@@ -1346,30 +1320,26 @@
         // FLIP CLOCK COUNTDOWN - Countdown to 1 Feb 00:01
         // =============================================
         (function initCountdown() {
-            let prevValues = { days: null, hours: null, mins: null };
-
             function updateFlipCard(cardId, value) {
                 const card = document.getElementById(cardId);
                 if (!card) return;
 
-                const topNum = card.querySelector('.top .number');
-                const bottomNum = card.querySelector('.bottom .number');
+                const numEl = card.querySelector('.number');
                 const formattedValue = value < 10 ? '0' + value : String(value);
 
-                if (topNum.textContent !== formattedValue) {
+                if (numEl.textContent !== formattedValue) {
                     // Trigger flip animation
                     card.classList.add('flipping');
 
-                    // Update numbers after animation starts
+                    // Update number at midpoint of animation
                     setTimeout(() => {
-                        topNum.textContent = formattedValue;
-                        bottomNum.textContent = formattedValue;
-                    }, 150);
+                        numEl.textContent = formattedValue;
+                    }, 250);
 
                     // Remove animation class
                     setTimeout(() => {
                         card.classList.remove('flipping');
-                    }, 450);
+                    }, 500);
                 }
             }
 
