@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skeppa.nu - Skeppa Kod Varje Månad</title>
+
+    <!-- FONTS & ICONS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+
+    <!-- SUPABASE -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        /* Modal & Toast */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-content { max-width: 400px; width: 90%; transform: translateY(20px); transition: transform 0.3s ease; }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; border-radius: 0.5rem; z-index: 200; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; }
+        .toast.active { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #059669; color: white; }
+        .toast.error { background: #DC2626; color: white; }
+        .spinner { width: 20px; height: 20px; border: 2px solid var(--chalk-line); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-ghost { background: transparent; border: 2px solid var(--chalk-line); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; }
+        .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
+        .user-menu { position: relative; }
+        .user-dropdown { position: absolute; top: 100%; right: 0; margin-top: 0.5rem; min-width: 180px; opacity: 0; pointer-events: none; transform: translateY(-10px); transition: all 0.2s ease; z-index: 60; }
+        .user-menu:hover .user-dropdown { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    </style>
+
+    <style>
+        :root {
+            /* DARK MODE (Standard) */
+            --bg-color: #050608;
+            --text-primary: #E2E8F0;
+            --text-secondary: #94A3B8;
+            /* KRITA-UPDATE: Uppdragen till 0.6 (från 0.25) för att garantera VIT färg, inte grå */
+            --chalk-line: rgba(255, 255, 255, 0.6);
+            --glass-bg: rgba(12, 14, 18, 0.6);
+            --cyan: #00D4FF;
+            --cyan-dim: rgba(0, 212, 255, 0.1);
+            --card-hover-border: rgba(255, 255, 255, 0.4);
+            --card-hover-shadow: rgba(0,0,0,0.5);
+        }
+
+        /* LIGHT MODE (Blueprint) */
+        body.light-theme {
+            --bg-color: #FDFDFD;
+            --text-primary: #0F172A; /* Slate 900 */
+            --text-secondary: #475569; /* Slate 600 */
+            --chalk-line: #CBD5E1; /* Slate 300 */
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --cyan: #0284C7; /* Sky 600 (Mörkare för kontrast) */
+            --cyan-dim: rgba(2, 132, 199, 0.1);
+            --card-hover-border: #0284C7;
+            --card-hover-shadow: rgba(2, 132, 199, 0.15);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Bakgrunds-brus (Gemensamt) */
+        body::before {
+            content: "";
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none; z-index: -2;
+        }
+
+        /* STARFALL CANVAS (Dark Mode) */
+        #starfall {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -5; pointer-events: none;
+            opacity: 1; transition: opacity 0.5s ease;
+        }
+        body.light-theme #starfall { opacity: 0; }
+
+        /* NEBULA GLOW (Dark Mode) */
+        .nebula-glow {
+            position: fixed; top: -20%; left: 50%; transform: translateX(-50%);
+            width: 80%; height: 60%;
+            background: radial-gradient(circle, rgba(0, 212, 255, 0.08) 0%, rgba(0,0,0,0) 70%);
+            z-index: -6; pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        body.light-theme .nebula-glow { opacity: 0; }
+
+        /* BLUEPRINT GRID (Light Mode) */
+        .blueprint-grid {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-image:
+                linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -6; pointer-events: none;
+            opacity: 0; transition: opacity 0.5s ease;
+        }
+        body.light-theme .blueprint-grid { opacity: 1; }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'DM Serif Display', serif;
+        }
+
+        /* --- UI KOMPONENTER --- */
+
+        .glass-panel {
+            background: var(--glass-bg);
+            /* KRITA-UPDATE: Tjockare kant (2px) */
+            border: 2px solid var(--chalk-line);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 1rem;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        .btn-primary {
+            background: rgba(255, 255, 255, 0.1);
+            /* KRITA-UPDATE: Matchar tjockleken */
+            border: 2px solid currentColor;
+            color: var(--text-primary);
+            padding: 0.6rem 1.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+        body.light-theme .btn-primary {
+            background: #F1F5F9;
+            border-color: #CBD5E1;
+            color: #0F172A;
+        }
+        .btn-primary:hover {
+            background: var(--text-primary);
+            color: var(--bg-color);
+            border-color: var(--text-primary);
+            box-shadow: 0 0 20px rgba(125, 211, 252, 0.3);
+            transform: translateY(-2px);
+        }
+        body.light-theme .btn-primary:hover {
+            background: var(--cyan);
+            color: #ffffff;
+            border-color: var(--cyan);
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: var(--text-primary);
+        }
+        .nav-link.active::after {
+            content: '';
+            position: absolute; bottom: -4px; left: 0; width: 100%; height: 1px;
+            background: var(--cyan);
+            box-shadow: 0 0 8px var(--cyan);
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle {
+            background: transparent;
+            /* KRITA-UPDATE: Tjockare kant */
+            border: 2px solid var(--chalk-line);
+            color: var(--text-secondary);
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .theme-toggle:hover {
+            color: var(--cyan);
+            border-color: var(--cyan);
+            background: var(--cyan-dim);
+        }
+
+        /* --- SPECIFIKA VARVET-KOMPONENTER --- */
+
+        .stat-card {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 1.5rem; text-align: center;
+        }
+        .stat-value {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2.5rem; line-height: 1;
+            color: var(--text-primary);
+            text-shadow: 0 0 15px rgba(255,255,255,0.1);
+        }
+        body.light-theme .stat-value { text-shadow: none; }
+        .stat-label {
+            font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--cyan); margin-top: 0.5rem;
+        }
+
+        .submission-card {
+            transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+            position: relative; overflow: hidden;
+        }
+        .submission-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--card-hover-border);
+            box-shadow: 0 10px 30px var(--card-hover-shadow);
+        }
+        .card-image {
+            height: 160px;
+            background: rgba(0,0,0,0.3);
+            display: flex; align-items: center; justify-content: center;
+            /* KRITA-UPDATE: Tjockare kant */
+            border-bottom: 2px solid var(--chalk-line);
+            color: var(--text-secondary);
+        }
+        body.light-theme .card-image { background: #F1F5F9; }
+
+        /* Badges */
+        .badge-pill {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 2px 8px; border-radius: 4px;
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            /* Behåller 1px här för att inte dränka texten, eller vill du ha 2px här med? */
+            border: 1px solid var(--chalk-line);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+        }
+        body.light-theme .badge-pill { background: rgba(0,0,0,0.05); }
+        .badge-gold { border-color: #fbbf24; color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+        .badge-cyan { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-dim); }
+
+        /* Leaderboard Table */
+        .leaderboard-row {
+            /* KRITA-UPDATE: Tjockare avdelare */
+            border-bottom: 2px solid var(--chalk-line);
+            transition: background 0.2s;
+        }
+        .leaderboard-row:last-child { border-bottom: none; }
+        .leaderboard-row:hover { background: rgba(255,255,255,0.03); }
+        body.light-theme .leaderboard-row:hover { background: rgba(0,0,0,0.03); }
+        .rank-number { font-family: 'DM Serif Display'; font-size: 1.25rem; color: var(--text-primary); }
+
+        /* Countdown */
+        .countdown-segment {
+            background: rgba(0,0,0,0.2);
+            /* KRITA-UPDATE: Tjockare kant */
+            border: 2px solid var(--chalk-line);
+            padding: 0.5rem; min-width: 60px; border-radius: 4px;
+        }
+        body.light-theme .countdown-segment { background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+
+    <!-- TOAST -->
+    <div id="toast" class="toast"></div>
+
+    <!-- AUTH MODAL -->
+    <div id="auth-modal" class="modal-overlay" onclick="if(event.target === this) closeAuthModal()">
+        <div class="modal-content glass-panel p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-[var(--text-primary)]" id="auth-title">Logga in</h3>
+                <button onclick="closeAuthModal()" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-2xl">&times;</button>
+            </div>
+            <form id="auth-form" onsubmit="handleAuth(event)">
+                <div class="space-y-4">
+                    <div id="username-field" class="hidden">
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Användarnamn</label>
+                        <input type="text" id="auth-username" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="@ditt_namn">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Email</label>
+                        <input type="email" id="auth-email" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="din@email.se" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Lösenord</label>
+                        <input type="password" id="auth-password" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="••••••••" required minlength="6">
+                    </div>
+                </div>
+                <button type="submit" id="auth-submit" class="btn-primary w-full mt-6 py-3 flex items-center justify-center gap-2">
+                    <span id="auth-btn-text">Logga in</span>
+                    <span id="auth-spinner" class="spinner hidden"></span>
+                </button>
+                <p class="text-center text-sm text-[var(--text-secondary)] mt-4">
+                    <span id="auth-switch-text">Inget konto?</span>
+                    <button type="button" onclick="toggleAuthMode()" class="text-[var(--cyan)] hover:underline" id="auth-switch-btn">Registrera dig</button>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- BAKGRUND -->
+    <canvas id="starfall"></canvas> <!-- Partiklar för Dark Mode -->
+    <div class="nebula-glow"></div> <!-- Ljusglimt för Dark Mode -->
+    <div class="blueprint-grid"></div> <!-- Rutnät för Light Mode -->
+
+    <!-- HEADER -->
+    <header class="fixed w-full top-0 z-50 glass-panel border-t-0 border-l-0 border-r-0 rounded-none">
+        <div class="container mx-auto px-6 h-20 flex justify-between items-center">
+            <!-- LOGO -->
+            <a href="#" onclick="showSection('start')" class="flex items-center gap-3 group">
+                <img src="https://raw.githubusercontent.com/GusHem/Logga-utan-text/refs/heads/main/Final%20logo%20no%20text.svg" alt="NordSym" class="h-10 opacity-90 group-hover:opacity-100 transition-opacity">
+                <div class="flex flex-col">
+                    <span class="brand-font text-xl leading-none tracking-wide text-[var(--text-primary)]">SKEPPA.NU</span>
+                    <span class="text-[10px] uppercase tracking-[0.2em] text-[var(--cyan)]">Shipyard</span>
+                </div>
+            </a>
+
+            <!-- NAV (DESKTOP) -->
+            <nav class="hidden md:flex gap-8">
+                <button onclick="showSection('start')" class="nav-link active" data-target="start">Start</button>
+                <button onclick="showSection('leaderboard')" class="nav-link" data-target="leaderboard">Topplistan</button>
+                <button onclick="showSection('about')" class="nav-link" data-target="about">Om Skeppa.nu</button>
+            </nav>
+
+            <!-- RIGHT ACTIONS -->
+            <div class="flex items-center gap-4">
+                <button id="theme-toggle" class="theme-toggle" aria-label="Växla tema">
+                    <i class="ph ph-sun"></i>
+                </button>
+
+                <!-- Auth buttons (logged out) -->
+                <div id="auth-buttons" class="flex items-center gap-2">
+                    <button onclick="openAuthModal('login')" class="btn-ghost hidden sm:block">Logga in</button>
+                    <button onclick="openAuthModal('signup')" class="btn-primary flex items-center gap-2">
+                        <i class="ph-hammer"></i> <span class="hidden sm:inline">Börja Bygga</span>
+                    </button>
+                </div>
+
+                <!-- User menu (logged in) -->
+                <div id="user-menu" class="user-menu hidden">
+                    <button class="flex items-center gap-2 btn-ghost">
+                        <div id="user-avatar" class="w-8 h-8 rounded-full bg-[var(--cyan)] flex items-center justify-center text-white text-sm font-bold">?</div>
+                        <span id="user-name" class="hidden sm:inline text-[var(--text-primary)]">@user</span>
+                        <i class="ph-caret-down text-xs"></i>
+                    </button>
+                    <div class="user-dropdown glass-panel p-2">
+                        <button onclick="showSection('build')" class="w-full text-left px-4 py-2 rounded hover:bg-[var(--cyan-dim)] text-[var(--text-primary)] flex items-center gap-2">
+                            <i class="ph-paper-plane-right"></i> Skeppa projekt
+                        </button>
+                        <button onclick="showMySubmissions()" class="w-full text-left px-4 py-2 rounded hover:bg-[var(--cyan-dim)] text-[var(--text-secondary)] flex items-center gap-2">
+                            <i class="ph-folder"></i> Mina skeppningar
+                        </button>
+                        <hr class="my-2 border-[var(--chalk-line)]">
+                        <button onclick="handleLogout()" class="w-full text-left px-4 py-2 rounded hover:bg-red-500/10 text-red-400 flex items-center gap-2">
+                            <i class="ph-sign-out"></i> Logga ut
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20 container mx-auto px-6 min-h-screen relative z-10">
+
+        <!-- SECTION: START / DASHBOARD -->
+        <section id="section-start" class="fade-in-section">
+            <!-- HERO -->
+            <div class="text-center mb-16 relative">
+                <!-- KRITA-UPDATE: border-2 på batchen -->
+                <div class="inline-block px-3 py-1 border-2 border-[var(--chalk-line)] rounded-full text-xs font-mono text-[var(--cyan)] mb-4 bg-black/5 backdrop-blur-sm">
+                    ● JANUARI-SKEPPNING LIVE
+                </div>
+                <h1 class="text-5xl md:text-7xl text-[var(--text-primary)] mb-6 leading-tight">
+                    Ett skeppat projekt.<br>
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)]">Varje månad.</span>
+                </h1>
+                <p class="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto mb-8">
+                    Skeppa.nu är platsen där du går från idé till lansering. Inga ursäkter. Bygg med AI, sjösätt ditt projekt och klättra på redarlistan.
+                </p>
+
+                <!-- COUNTDOWN -->
+                <div class="flex justify-center gap-3 font-mono text-sm mb-12">
+                    <div class="countdown-segment">
+                        <div class="text-xl text-[var(--text-primary)] font-bold" id="days">12</div>
+                        <div class="text-xs text-[var(--text-secondary)]">DGR</div>
+                    </div>
+                    <div class="countdown-segment">
+                        <div class="text-xl text-[var(--text-primary)] font-bold" id="hours">04</div>
+                        <div class="text-xs text-[var(--text-secondary)]">TIM</div>
+                    </div>
+                    <div class="countdown-segment">
+                        <div class="text-xl text-[var(--text-primary)] font-bold" id="mins">32</div>
+                        <div class="text-xs text-[var(--text-secondary)]">MIN</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STATS GRID -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-16">
+                <div class="glass-panel stat-card">
+                    <div class="stat-value">48</div>
+                    <div class="stat-label">Arkitekter</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">Sjösatta Skepp</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value text-[var(--cyan)]">Jan</div>
+                    <div class="stat-label">Månadens Batch</div>
+                </div>
+                <div class="glass-panel stat-card">
+                    <div class="stat-value">190</div>
+                    <div class="stat-label">Poäng Utlöst</div>
+                </div>
+            </div>
+
+            <!-- RECENT SUBMISSIONS -->
+            <div class="flex justify-between items-end mb-6">
+                <h3 class="text-2xl text-[var(--text-primary)]">Nyligen Sjösatt</h3>
+                <a href="#" onclick="showSection('leaderboard')" class="text-sm text-[var(--cyan)] hover:underline transition-colors">Visa alla →</a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- CARD 1 -->
+                <div class="glass-panel submission-card group cursor-pointer">
+                    <div class="card-image">
+                        <i class="ph-kanban text-4xl"></i>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">VibeSaaS MVP</h4>
+                            <span class="badge-pill badge-cyan">AI</span>
+                        </div>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">En n8n-orkestrator som bygger React-komponenter baserat på röstkommandon.</p>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
+                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">K</div>
+                                @keen_dev
+                            </div>
+                            <span class="text-[var(--text-secondary)] opacity-70"><i class="ph-clock"></i> 2h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 2 -->
+                <div class="glass-panel submission-card group cursor-pointer">
+                    <div class="card-image">
+                        <i class="ph-robot text-4xl"></i>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">The Agency</h4>
+                            <span class="badge-pill badge-gold">TOPP</span>
+                        </div>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">Simulation av ett företag där 5 Claude-instanser pratar med varandra via Markdown.</p>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
+                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">S</div>
+                                @simon_arch
+                            </div>
+                            <span class="text-[var(--text-secondary)] opacity-70"><i class="ph-clock"></i> 5h</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CARD 3 -->
+                <div class="glass-panel submission-card group cursor-pointer">
+                    <div class="card-image">
+                        <i class="ph-chart-polar text-4xl"></i>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">AEO Radar</h4>
+                            <span class="badge-pill">DATA</span>
+                        </div>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">Visualiserar hur ofta ditt varumärke nämns i LLM-svar jämfört med konkurrenter.</p>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
+                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">N</div>
+                                @nord_fan
+                            </div>
+                            <span class="text-[var(--text-secondary)] opacity-70"><i class="ph-clock"></i> 1d</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: LEADERBOARD -->
+        <section id="section-leaderboard" class="hidden fade-in-section">
+            <div class="text-center mb-12">
+                <span class="text-[var(--cyan)] text-xs tracking-widest uppercase">Januari 2026</span>
+                <h2 class="text-4xl text-[var(--text-primary)] mb-4">Redarlistan</h2>
+                <p class="text-[var(--text-secondary)]">De som skeppar mest och bäst just nu.</p>
+            </div>
+
+            <div class="glass-panel overflow-hidden max-w-4xl mx-auto">
+                <div class="p-4 border-b border-[var(--chalk-line)] flex text-xs text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
+                    <div class="w-16 text-center">Rank</div>
+                    <div class="flex-grow">Arkitekt</div>
+                    <div class="w-32 text-center">Skeppat</div>
+                    <div class="w-24 text-right">Poäng</div>
+                </div>
+
+                <!-- ROW 1 -->
+                <div class="leaderboard-row p-4 flex items-center">
+                    <div class="w-16 text-center rank-number text-yellow-400">1</div>
+                    <div class="flex-grow flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">S</div>
+                        <div>
+                            <div class="text-[var(--text-primary)] font-medium">@simon_arch</div>
+                            <div class="text-[10px] text-[var(--text-secondary)] flex gap-1 mt-0.5">
+                                <span class="badge-pill badge-gold text-[8px] py-0 px-1">MVP</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-32 text-center text-[var(--text-secondary)]">3</div>
+                    <div class="w-24 text-right font-mono text-[var(--cyan)] font-bold">420</div>
+                </div>
+
+                <!-- ROW 2 -->
+                <div class="leaderboard-row p-4 flex items-center">
+                    <div class="w-16 text-center rank-number text-[var(--text-secondary)]">2</div>
+                    <div class="flex-grow flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">K</div>
+                        <div>
+                            <div class="text-[var(--text-primary)] font-medium">@keen_dev</div>
+                        </div>
+                    </div>
+                    <div class="w-32 text-center text-[var(--text-secondary)]">2</div>
+                    <div class="w-24 text-right font-mono text-[var(--text-primary)] font-bold">280</div>
+                </div>
+
+                <!-- ROW 3 -->
+                <div class="leaderboard-row p-4 flex items-center">
+                    <div class="w-16 text-center rank-number text-orange-700">3</div>
+                    <div class="flex-grow flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">A</div>
+                        <div>
+                            <div class="text-[var(--text-primary)] font-medium">@ai_builder_99</div>
+                        </div>
+                    </div>
+                    <div class="w-32 text-center text-[var(--text-secondary)]">1</div>
+                    <div class="w-24 text-right font-mono text-[var(--text-primary)] font-bold">150</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: ABOUT -->
+        <section id="section-about" class="hidden fade-in-section max-w-3xl mx-auto">
+            <h2 class="text-4xl text-[var(--text-primary)] mb-8 text-center">Hur fungerar Skeppa.nu?</h2>
+
+            <div class="space-y-6">
+                <div class="glass-panel p-6 flex gap-6 items-start">
+                    <div class="text-4xl text-[var(--cyan)] font-serif opacity-50">01</div>
+                    <div>
+                        <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Bygg något (snabbt)</h4>
+                        <p class="text-[var(--text-secondary)] leading-relaxed">Varje månad öppnas en ny utmaning. Temat är valfritt men rekommenderat. Målet är att använda AI-verktyg för att gå från idé till fungerande prototyp.</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 flex gap-6 items-start">
+                    <div class="text-4xl text-[var(--cyan)] font-serif opacity-50">02</div>
+                    <div>
+                        <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Sjösätt (Submitta)</h4>
+                        <p class="text-[var(--text-secondary)] leading-relaxed">Dela din länk innan månaden är slut. Det kan vara en webbapp, ett GitHub-repo eller en video på ett fungerande n8n-flöde.</p>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 flex gap-6 items-start">
+                    <div class="text-4xl text-[var(--cyan)] font-serif opacity-50">03</div>
+                    <div>
+                        <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Samla Utmärkelser</h4>
+                        <p class="text-[var(--text-secondary)] leading-relaxed">Få poäng för momentum. Samla badges som "Dubbellast" (2 skeppningar/mån) eller "Jungfrufärd" (Första bygget).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ -->
+            <div class="mt-20 max-w-3xl mx-auto">
+                <h3 class="text-3xl text-[var(--text-primary)] mb-8 text-center font-serif">Vanliga Frågor</h3>
+                <div class="space-y-4">
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Vad räknas som en sjösättning?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Allt du har skeppat: webbapp, spel, mobilapp, CLI-verktyg eller plugin. En live-URL är enklast, men länkar till App Store, itch.io, GitHub Releases eller en nedladdningssida fungerar också. Om det krävs nedladdning, lägg gärna till en demo-länk så folk kan tjuvkika först.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Kan jag sjösätta flera gånger per månad?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Ja. Vi uppmuntrar momentum – du kan registrera upp till 5 skeppningar per månad för att samla poäng.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Hur fungerar poäng och utmärkelser?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Din första sjösättning i månaden ger <strong>10 poäng</strong>. Varje efterföljande ger <strong>5 poäng</strong> (upp till 5 st). Utmärkelser (Badges) delas ut automatiskt vid milstolpar och ger <strong>+2 poäng</strong> vardera.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Måste jag följa månadens tema?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Nej. Temat är valfritt och finns där för inspiration. Bygg vad du vill.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Måste jag dela min källkod (repo)?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Nej. Länk till repot är valfritt. Men om din app kostar pengar eller kräver inloggning, hjälper en publik demo eller video folk att förstå vad du byggt.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Måste jag använda ett specifikt AI-verktyg?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Nej. Använd det som får dig att skeppa snabbast (Cursor, Windsurf, Claude Code, GitHub Copilot etc.). Berätta gärna i beskrivningen vad du använde, det hjälper andra byggare.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Kan jag bygga vidare på ett gammalt projekt?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Ja. Nya byggen, stora uppdateringar och remixer är välkomna. Om du startade tidigare, specificera vad du skeppade just denna månad.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            Är detta bara för "seriösa" projekt?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Nej. Smått, konstigt, lekfullt eller praktiskt – om det är skeppat så hör det hemma på Skeppa.nu.
+                        </p>
+                    </details>
+
+                    <details class="glass-panel p-4 group">
+                        <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
+                            När stänger inlämningen?
+                            <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
+                        </summary>
+                        <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
+                            Varje månad har en definierad start och slut. Vi följer UTC-tid så att alla har samma deadline oavsett var man befinner sig.
+                        </p>
+                    </details>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: BUILD (FORM) -->
+        <section id="section-build" class="hidden fade-in-section max-w-xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl text-[var(--text-primary)] mb-2">Registrera Skeppning</h2>
+                <p class="text-[var(--text-secondary)]">Fyll i detaljerna om ditt bygge för att få poäng.</p>
+            </div>
+
+            <div class="glass-panel p-8">
+                <!-- Login required message -->
+                <div id="login-required" class="text-center py-8">
+                    <i class="ph-lock-key text-4xl text-[var(--text-secondary)] mb-4"></i>
+                    <h4 class="text-xl text-[var(--text-primary)] mb-2">Logga in för att skeppa</h4>
+                    <p class="text-[var(--text-secondary)] mb-6">Du behöver ett konto för att registrera dina projekt.</p>
+                    <button onclick="openAuthModal('signup')" class="btn-primary">Skapa konto</button>
+                </div>
+
+                <!-- Submission form (hidden until logged in) -->
+                <form id="submit-form" class="hidden" onsubmit="handleSubmission(event)">
+                    <div class="space-y-6">
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Projektnamn *</label>
+                            <input type="text" id="project-title" required class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="t.ex. Auto-CRM">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Länk till projektet *</label>
+                            <input type="url" id="project-url" required class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="https://min-app.vercel.app">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Repo-länk (valfritt)</label>
+                            <input type="url" id="project-repo" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="https://github.com/...">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Beskrivning</label>
+                            <textarea rows="3" id="project-description" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="Vilket problem löser den? Vilken AI-stack använde du?"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Taggar</label>
+                            <div class="flex flex-wrap gap-2" id="tags-container">
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="AI" class="sr-only"> AI
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="SaaS" class="sr-only"> SaaS
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="n8n" class="sr-only"> n8n
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="API" class="sr-only"> API
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Spel" class="sr-only"> Spel
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="pt-4">
+                            <button type="submit" id="submit-btn" class="btn-primary w-full py-3 flex justify-center items-center gap-2">
+                                <span id="submit-text"><i class="ph-paper-plane-right"></i> Skeppa!</span>
+                                <span id="submit-spinner" class="spinner hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-[var(--chalk-line)] bg-[var(--glass-bg)] py-8 text-center text-xs text-[var(--text-secondary)]">
+        <p class="mb-2">En del av NordSym Ecosystem.</p>
+        <p>© 2026 NordSym AB. Byggt för byggare.</p>
+    </footer>
+
+    <script>
+        // =============================================
+        // SUPABASE CONFIG
+        // =============================================
+        const SUPABASE_URL = 'https://qjouribmhkkhqdsieprs.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqb3VyaWJtaGtraHFkc2llcHJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzI4NjcsImV4cCI6MjA1MjU0ODg2N30.UBSBWhsFeqVDFByq13yXNw_NkJGtR_d';
+
+        let supabase = null;
+        try {
+            if (window.supabase) {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Supabase connected');
+            } else {
+                console.warn('Supabase SDK not loaded');
+            }
+        } catch (e) {
+            console.error('Supabase init failed:', e);
+        }
+
+        // State
+        let currentUser = null;
+        let currentProfile = null;
+        let isLoginMode = true;
+
+        // =============================================
+        // AUTH FUNCTIONS
+        // =============================================
+
+        function openAuthModal(mode = 'login') {
+            isLoginMode = mode === 'login';
+            document.getElementById('auth-modal').classList.add('active');
+            document.getElementById('auth-title').textContent = isLoginMode ? 'Logga in' : 'Skapa konto';
+            document.getElementById('auth-btn-text').textContent = isLoginMode ? 'Logga in' : 'Registrera';
+            document.getElementById('auth-switch-text').textContent = isLoginMode ? 'Inget konto?' : 'Har du redan konto?';
+            document.getElementById('auth-switch-btn').textContent = isLoginMode ? 'Registrera dig' : 'Logga in';
+            document.getElementById('username-field').classList.toggle('hidden', isLoginMode);
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.remove('active');
+            document.getElementById('auth-form').reset();
+        }
+
+        function toggleAuthMode() {
+            openAuthModal(isLoginMode ? 'signup' : 'login');
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            const username = document.getElementById('auth-username').value;
+
+            // Show spinner
+            document.getElementById('auth-btn-text').classList.add('hidden');
+            document.getElementById('auth-spinner').classList.remove('hidden');
+            document.getElementById('auth-submit').disabled = true;
+
+            try {
+                if (!supabase) {
+                    throw new Error('Databasen är inte ansluten. Ladda om sidan.');
+                }
+                if (isLoginMode) {
+                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    if (error) throw error;
+                    showToast('Inloggad! Välkommen tillbaka.', 'success');
+                } else {
+                    if (!username || username.length < 3) {
+                        throw new Error('Användarnamn måste vara minst 3 tecken');
+                    }
+                    const { data, error } = await supabase.auth.signUp({
+                        email,
+                        password,
+                        options: {
+                            data: { username: username.replace('@', '') }
+                        }
+                    });
+                    if (error) throw error;
+                    showToast('Konto skapat! Kolla din mail för verifiering.', 'success');
+                }
+                closeAuthModal();
+            } catch (err) {
+                showToast(err.message, 'error');
+            } finally {
+                document.getElementById('auth-btn-text').classList.remove('hidden');
+                document.getElementById('auth-spinner').classList.add('hidden');
+                document.getElementById('auth-submit').disabled = false;
+            }
+        }
+
+        async function handleLogout() {
+            await supabase.auth.signOut();
+            currentUser = null;
+            currentProfile = null;
+            updateAuthUI();
+            showToast('Du har loggats ut', 'success');
+            showSection('start');
+        }
+
+        function updateAuthUI() {
+            const authButtons = document.getElementById('auth-buttons');
+            const userMenu = document.getElementById('user-menu');
+            const loginRequired = document.getElementById('login-required');
+            const submitForm = document.getElementById('submit-form');
+
+            if (currentUser && currentProfile) {
+                authButtons.classList.add('hidden');
+                userMenu.classList.remove('hidden');
+                loginRequired.classList.add('hidden');
+                submitForm.classList.remove('hidden');
+
+                // Update user info
+                const initial = (currentProfile.username || currentProfile.display_name || 'U')[0].toUpperCase();
+                document.getElementById('user-avatar').textContent = initial;
+                document.getElementById('user-name').textContent = '@' + (currentProfile.username || 'user');
+            } else {
+                authButtons.classList.remove('hidden');
+                userMenu.classList.add('hidden');
+                loginRequired.classList.remove('hidden');
+                submitForm.classList.add('hidden');
+            }
+        }
+
+        // =============================================
+        // SUBMISSION FUNCTIONS
+        // =============================================
+
+        async function handleSubmission(e) {
+            e.preventDefault();
+            if (!currentUser) {
+                openAuthModal('signup');
+                return;
+            }
+
+            const title = document.getElementById('project-title').value;
+            const url = document.getElementById('project-url').value;
+            const repoUrl = document.getElementById('project-repo').value;
+            const description = document.getElementById('project-description').value;
+            const tagInputs = document.querySelectorAll('input[name="tags"]:checked');
+            const tags = Array.from(tagInputs).map(el => el.value);
+
+            // Get current batch month
+            const now = new Date();
+            const batchMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // Show spinner
+            document.getElementById('submit-text').classList.add('hidden');
+            document.getElementById('submit-spinner').classList.remove('hidden');
+            document.getElementById('submit-btn').disabled = true;
+
+            try {
+                // Calculate points
+                const { data: points } = await supabase.rpc('calculate_submission_points', {
+                    p_user_id: currentUser.id,
+                    p_batch_month: batchMonth
+                });
+
+                // Insert submission
+                const { data, error } = await supabase
+                    .from('submissions')
+                    .insert({
+                        user_id: currentUser.id,
+                        title,
+                        url,
+                        repo_url: repoUrl || null,
+                        description,
+                        tags,
+                        batch_month: batchMonth,
+                        points_earned: points || 10
+                    })
+                    .select()
+                    .single();
+
+                if (error) throw error;
+
+                showToast(`Skeppat! +${points || 10} poäng`, 'success');
+                document.getElementById('submit-form').reset();
+
+                // Reload data
+                await loadDashboardData();
+                showSection('start');
+
+            } catch (err) {
+                showToast('Kunde inte skeppa: ' + err.message, 'error');
+            } finally {
+                document.getElementById('submit-text').classList.remove('hidden');
+                document.getElementById('submit-spinner').classList.add('hidden');
+                document.getElementById('submit-btn').disabled = false;
+            }
+        }
+
+        // =============================================
+        // DATA LOADING
+        // =============================================
+
+        async function loadDashboardData() {
+            try {
+                // Load stats
+                const [profilesRes, submissionsRes, batchRes] = await Promise.all([
+                    supabase.from('profiles').select('id', { count: 'exact', head: true }),
+                    supabase.from('submissions').select('id, points_earned', { count: 'exact' }),
+                    supabase.from('batches').select('*').eq('is_active', true).single()
+                ]);
+
+                // Update stats
+                const totalUsers = profilesRes.count || 0;
+                const submissions = submissionsRes.data || [];
+                const totalSubmissions = submissionsRes.count || 0;
+                const totalPoints = submissions.reduce((sum, s) => sum + (s.points_earned || 0), 0);
+
+                document.querySelector('.stat-value:nth-of-type(1)')?.closest('.stat-card')?.querySelector('.stat-value')
+                    && (document.querySelectorAll('.stat-value')[0].textContent = totalUsers);
+                document.querySelectorAll('.stat-value')[1] && (document.querySelectorAll('.stat-value')[1].textContent = totalSubmissions);
+                document.querySelectorAll('.stat-value')[3] && (document.querySelectorAll('.stat-value')[3].textContent = totalPoints);
+
+                // Load recent submissions
+                await loadRecentSubmissions();
+
+                // Load leaderboard
+                await loadLeaderboard();
+
+            } catch (err) {
+                console.error('Failed to load dashboard:', err);
+            }
+        }
+
+        async function loadRecentSubmissions() {
+            const { data: submissions, error } = await supabase
+                .from('recent_submissions')
+                .select('*')
+                .limit(3);
+
+            if (error || !submissions?.length) return;
+
+            const container = document.querySelector('#section-start .grid.grid-cols-1.md\\:grid-cols-3');
+            if (!container) return;
+
+            container.innerHTML = submissions.map(s => `
+                <div class="glass-panel submission-card group cursor-pointer" onclick="window.open('${s.url}', '_blank')">
+                    <div class="card-image">
+                        <i class="ph-rocket-launch text-4xl"></i>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">${escapeHtml(s.title)}</h4>
+                            ${s.tags?.includes('AI') ? '<span class="badge-pill badge-cyan">AI</span>' : ''}
+                        </div>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">${escapeHtml(s.description || 'Ingen beskrivning')}</p>
+                        <div class="flex justify-between items-center text-xs">
+                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
+                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">${(s.username || 'U')[0].toUpperCase()}</div>
+                                @${escapeHtml(s.username || 'anonym')}
+                            </div>
+                            <span class="text-[var(--text-secondary)] opacity-70">+${s.points_earned}p</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function loadLeaderboard() {
+            const { data: leaders, error } = await supabase
+                .from('leaderboard')
+                .select('*')
+                .order('total_points', { ascending: false })
+                .limit(10);
+
+            if (error || !leaders?.length) return;
+
+            const container = document.querySelector('#section-leaderboard .glass-panel');
+            if (!container) return;
+
+            const header = container.querySelector('.border-b');
+            const rows = leaders.map((user, i) => {
+                const rankColors = ['text-yellow-400', 'text-[var(--text-secondary)]', 'text-orange-700'];
+                return `
+                    <div class="leaderboard-row p-4 flex items-center">
+                        <div class="w-16 text-center rank-number ${rankColors[i] || 'text-[var(--text-secondary)]'}">${i + 1}</div>
+                        <div class="flex-grow flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">
+                                ${(user.username || 'U')[0].toUpperCase()}
+                            </div>
+                            <div>
+                                <div class="text-[var(--text-primary)] font-medium">@${escapeHtml(user.username || 'anonym')}</div>
+                                ${user.badges?.length ? `<div class="text-[10px] text-[var(--text-secondary)] flex gap-1 mt-0.5">
+                                    ${user.badges.slice(0, 2).map(b => `<span class="badge-pill badge-gold text-[8px] py-0 px-1">${b.toUpperCase()}</span>`).join('')}
+                                </div>` : ''}
+                            </div>
+                        </div>
+                        <div class="w-32 text-center text-[var(--text-secondary)]">${user.submission_count || 0}</div>
+                        <div class="w-24 text-right font-mono ${i === 0 ? 'text-[var(--cyan)]' : 'text-[var(--text-primary)]'} font-bold">${user.total_points}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = header.outerHTML + rows;
+        }
+
+        function showMySubmissions() {
+            // TODO: Show user's submissions modal
+            showToast('Kommer snart!', 'success');
+        }
+
+        // =============================================
+        // UI HELPERS
+        // =============================================
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} active`;
+            setTimeout(() => toast.classList.remove('active'), 3000);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // =============================================
+        // STARFALL MANAGER (Canvas Animation)
+        // =============================================
+        class StarfallManager {
+            constructor() {
+                this.canvas = document.getElementById('starfall');
+                this.ctx = this.canvas.getContext('2d');
+                this.stars = [];
+                this.meteors = [];
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+
+                this.config = {
+                    starCount: 200,
+                    meteorChance: 0.005,
+                    colors: {
+                        star: '255, 255, 255',
+                        meteorHead: '#00D4FF',
+                        meteorTrailEnd: 'rgba(0, 212, 255, 0)'
+                    }
+                };
+
+                this.init();
+            }
+
+            init() {
+                this.handleResize();
+                window.addEventListener('resize', () => this.handleResize());
+                this.createStars();
+                this.animate();
+            }
+
+            handleResize() {
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.canvas.width = this.width;
+                this.canvas.height = this.height;
+                if(this.stars.length === 0) this.createStars();
+            }
+
+            createStars() {
+                this.stars = [];
+                for (let i = 0; i < this.config.starCount; i++) {
+                    this.stars.push({
+                        x: Math.random() * this.width,
+                        y: Math.random() * this.height,
+                        size: Math.random() * 1.5 + 0.5,
+                        baseOpacity: Math.random() * 0.5 + 0.1,
+                        pulseSpeed: Math.random() * 0.02 + 0.005,
+                        pulseOffset: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+
+            createMeteor() {
+                return {
+                    x: Math.random() * this.width * 1.5,
+                    y: -100,
+                    length: Math.random() * 80 + 40,
+                    speed: Math.random() * 15 + 10,
+                    thickness: Math.random() * 1.5 + 0.5,
+                    angle: Math.PI / 4 + (Math.random() * 0.1 - 0.05)
+                };
+            }
+
+            draw() {
+                this.ctx.clearRect(0, 0, this.width, this.height);
+
+                const time = Date.now();
+                this.stars.forEach(star => {
+                    const pulse = Math.sin(time * 0.002 * star.pulseSpeed + star.pulseOffset);
+                    const opacity = Math.max(0, Math.min(1, star.baseOpacity + pulse * 0.2));
+                    this.ctx.fillStyle = `rgba(${this.config.colors.star}, ${opacity})`;
+                    this.ctx.fillRect(star.x, star.y, star.size, star.size);
+                });
+
+                if (Math.random() < this.config.meteorChance) this.meteors.push(this.createMeteor());
+
+                for (let i = this.meteors.length - 1; i >= 0; i--) {
+                    const m = this.meteors[i];
+                    m.x -= m.speed * Math.cos(m.angle);
+                    m.y += m.speed * Math.sin(m.angle);
+
+                    const tailX = m.x + m.length * Math.cos(m.angle);
+                    const tailY = m.y - m.length * Math.sin(m.angle);
+
+                    const gradient = this.ctx.createLinearGradient(m.x, m.y, tailX, tailY);
+                    gradient.addColorStop(0, this.config.colors.meteorHead);
+                    gradient.addColorStop(1, this.config.colors.meteorTrailEnd);
+
+                    this.ctx.strokeStyle = gradient;
+                    this.ctx.lineWidth = m.thickness;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(m.x, m.y);
+                    this.ctx.lineTo(tailX, tailY);
+                    this.ctx.stroke();
+
+                    if (m.y > this.height + 200) this.meteors.splice(i, 1);
+                }
+            }
+
+            animate() {
+                if (!document.body.classList.contains('light-theme')) {
+                    this.draw();
+                }
+                requestAnimationFrame(() => this.animate());
+            }
+        }
+
+        // =============================================
+        // SPA ROUTING
+        // =============================================
+        function showSection(sectionId) {
+            document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(`section-${sectionId}`);
+            if(target) {
+                target.classList.remove('hidden');
+                target.style.opacity = 0;
+                setTimeout(() => target.style.opacity = 1, 50);
+                target.style.transition = 'opacity 0.4s ease';
+            }
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                if(btn.dataset.target === sectionId) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            window.scrollTo(0, 0);
+        }
+
+        // =============================================
+        // THEME MANAGER
+        // =============================================
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const body = document.body;
+
+        const savedTheme = localStorage.getItem('varvet_theme');
+        if (savedTheme === 'light') {
+            body.classList.add('light-theme');
+            themeToggleBtn.innerHTML = '<i class="ph ph-moon"></i>';
+        }
+
+        themeToggleBtn.addEventListener('click', () => {
+            body.classList.toggle('light-theme');
+            const isLight = body.classList.contains('light-theme');
+            localStorage.setItem('varvet_theme', isLight ? 'light' : 'dark');
+            themeToggleBtn.innerHTML = isLight ? '<i class="ph ph-moon"></i>' : '<i class="ph ph-sun"></i>';
+        });
+
+        // =============================================
+        // COUNTDOWN TIMER
+        // =============================================
+        function updateTimer() {
+            const now = new Date();
+            const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+            const diff = endOfMonth - now;
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            document.getElementById('days').innerText = d < 10 ? '0'+d : d;
+            document.getElementById('hours').innerText = h < 10 ? '0'+h : h;
+            document.getElementById('mins').innerText = m < 10 ? '0'+m : m;
+        }
+        setInterval(updateTimer, 60000);
+        updateTimer();
+
+        // =============================================
+        // TAG CHECKBOX STYLING
+        // =============================================
+        document.querySelectorAll('input[name="tags"]').forEach(input => {
+            input.addEventListener('change', function() {
+                const label = this.closest('label');
+                if (this.checked) {
+                    label.classList.add('badge-cyan');
+                } else {
+                    label.classList.remove('badge-cyan');
+                }
+            });
+        });
+
+        // =============================================
+        // INITIALIZATION
+        // =============================================
+        window.addEventListener('load', async () => {
+            new StarfallManager();
+
+            if (!supabase) {
+                console.warn('Running in demo mode - no Supabase');
+                updateAuthUI();
+                return;
+            }
+
+            // Check auth state
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                currentUser = session.user;
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                currentProfile = profile;
+            }
+            updateAuthUI();
+
+            // Listen for auth changes
+            supabase.auth.onAuthStateChange(async (event, session) => {
+                if (session) {
+                    currentUser = session.user;
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+                    currentProfile = profile;
+                } else {
+                    currentUser = null;
+                    currentProfile = null;
+                }
+                updateAuthUI();
+            });
+
+            // Load data
+            await loadDashboardData();
+        });
+
+    </script>
+</body>
+</html>
