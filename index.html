@@ -1079,7 +1079,8 @@
                 <!-- Inline script to ensure countdown runs immediately -->
                 <script>
                 (function() {
-                    const target = new Date(2026, 1, 1, 0, 1, 0);
+                    // Target: 1 Feb 2026 at 00:00 Swedish time (CET = UTC+1)
+                    const target = new Date('2026-02-01T00:00:00+01:00');
                     const now = new Date();
                     const diff = target - now;
                     if (diff > 0) {
@@ -3216,15 +3217,18 @@
 
             function updateTimer() {
                 const now = new Date();
-                // Target: 1 Feb 2026 at 00:01 (Swedish time)
-                const target = new Date(2026, 1, 1, 0, 1, 0);
+                // Target: 1 Feb 2026 at 00:00 Swedish time (CET = UTC+1)
+                // Using ISO format with timezone offset ensures correct time globally
+                const target = new Date('2026-02-01T00:00:00+01:00');
                 const diff = target - now;
 
+                const countdownLabel = document.getElementById('countdown-label');
+                const flipClock = document.querySelector('.flip-clock');
+
                 if (diff <= 0) {
-                    updateFlipCard('flip-days', 0);
-                    updateFlipCard('flip-hours', 0);
-                    updateFlipCard('flip-mins', 0);
-                    updateFlipCard('flip-secs', 0);
+                    // Countdown finished - show "Februari är här!" message
+                    if (countdownLabel) countdownLabel.textContent = 'Februari är här!';
+                    if (flipClock) flipClock.style.display = 'none';
                     return;
                 }
 
