@@ -950,17 +950,27 @@
             </a>
 
             <!-- NAV (DESKTOP) -->
-            <nav class="flex gap-8" style="display: none;" id="main-nav">
+            <nav class="hidden md:flex gap-8" id="main-nav">
                 <button onclick="showSection('start')" class="nav-link active" data-target="start">Start</button>
                 <button onclick="showSection('leaderboard')" class="nav-link" data-target="leaderboard">Topplistan</button>
                 <button onclick="showSection('roadmap')" class="nav-link" data-target="roadmap">Roadmap</button>
                 <button onclick="showSection('about')" class="nav-link" data-target="about">Hur funkar det?</button>
             </nav>
-            <style>
-                @media (min-width: 768px) {
-                    #main-nav { display: flex !important; }
-                }
-            </style>
+
+            <!-- MOBILE MENU BUTTON -->
+            <button id="mobile-menu-btn" class="md:hidden p-2 text-[var(--text-primary)]" onclick="toggleMobileMenu()">
+                <i class="ph ph-list text-2xl"></i>
+            </button>
+
+            <!-- MOBILE NAV -->
+            <div id="mobile-nav" class="hidden fixed inset-0 top-20 bg-[var(--bg)] z-40 p-6 md:hidden">
+                <nav class="flex flex-col gap-4">
+                    <button onclick="showSection('start'); closeMobileMenu()" class="nav-link text-left text-lg py-3 border-b border-[var(--chalk-line)]" data-target="start">Start</button>
+                    <button onclick="showSection('leaderboard'); closeMobileMenu()" class="nav-link text-left text-lg py-3 border-b border-[var(--chalk-line)]" data-target="leaderboard">Topplistan</button>
+                    <button onclick="showSection('roadmap'); closeMobileMenu()" class="nav-link text-left text-lg py-3 border-b border-[var(--chalk-line)]" data-target="roadmap">Roadmap</button>
+                    <button onclick="showSection('about'); closeMobileMenu()" class="nav-link text-left text-lg py-3 border-b border-[var(--chalk-line)]" data-target="about">Hur funkar det?</button>
+                </nav>
+            </div>
 
             <!-- RIGHT ACTIONS -->
             <div class="flex items-center gap-4">
@@ -1012,20 +1022,17 @@
             <!-- HERO -->
             <div class="text-center mb-16 relative">
                 <!-- TEMA BADGE -->
-                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[rgba(107,159,255,0.15)] to-[rgba(177,156,217,0.15)] border border-[rgba(147,112,219,0.3)] mb-6">
-                    <span class="text-xs uppercase tracking-widest text-[var(--text-secondary)]">Februari tema</span>
-                    <span class="font-bold text-[var(--text-primary)]">MLP</span>
+                <div class="inline-block px-5 py-3 rounded-2xl bg-gradient-to-r from-[rgba(107,159,255,0.1)] to-[rgba(177,156,217,0.1)] border border-[rgba(147,112,219,0.2)] mb-8">
+                    <div class="font-bold text-[var(--text-primary)] mb-1">Februari: Minimal Lovable Product</div>
+                    <p class="text-sm text-[var(--text-secondary)] max-w-md">Vad kan du bygga och skeppa på en månad? Skippa feature creep. Fokus på kärnan. Gör något folk faktiskt vill använda.</p>
                 </div>
 
                 <h1 class="text-5xl md:text-7xl mb-6 leading-tight hero-title">
                     Från landkrabba till skeppare<br>
                     på en månad. <span class="sparkle inline purple">✦</span>
                 </h1>
-                <p class="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto mb-4">
+                <p class="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto mb-8">
                     Bygg med AI. Skeppa projektet. Ta platsen på topplistan.
-                </p>
-                <p class="text-[#B19CD9] text-sm max-w-xl mx-auto mb-8 italic">
-                    Minimal Lovable Product — En idé. En månad. Skeppat.
                 </p>
 
                 <!-- COUNTDOWN -->
@@ -1702,6 +1709,25 @@
                 loadLeaderboard();
             }
         };
+
+        // =============================================
+        // MOBILE MENU
+        // =============================================
+        function toggleMobileMenu() {
+            const nav = document.getElementById('mobile-nav');
+            const btn = document.getElementById('mobile-menu-btn');
+            nav.classList.toggle('hidden');
+            btn.innerHTML = nav.classList.contains('hidden')
+                ? '<i class="ph ph-list text-2xl"></i>'
+                : '<i class="ph ph-x text-2xl"></i>';
+        }
+
+        function closeMobileMenu() {
+            const nav = document.getElementById('mobile-nav');
+            const btn = document.getElementById('mobile-menu-btn');
+            nav.classList.add('hidden');
+            btn.innerHTML = '<i class="ph ph-list text-2xl"></i>';
+        }
 
         // =============================================
         // USER MENU (click to toggle)
