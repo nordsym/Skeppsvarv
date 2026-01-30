@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Skeppa.nu - Skeppa Kod Varje Månad</title>
+    <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Gra%CC%88vling%20flownode%20avatar.svg">
 
     <!-- FONTS & ICONS -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,12 +27,93 @@
         .toast.success { background: #059669; color: white; }
         .toast.error { background: #DC2626; color: white; }
         .spinner { width: 20px; height: 20px; border: 2px solid var(--chalk-line); border-top-color: var(--cyan); border-radius: 50%; animation: spin 0.8s linear infinite; display: inline-block; }
+        .spinner.hidden { display: none !important; }
+        .hidden { display: none !important; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn-ghost { background: transparent; border: 2px solid var(--chalk-line); color: var(--text-secondary); padding: 0.5rem 1rem; border-radius: 9999px; font-weight: 500; transition: all 0.2s ease; cursor: pointer; }
         .btn-ghost:hover { border-color: var(--cyan); color: var(--cyan); }
         .user-menu { position: relative; }
         .user-dropdown { position: absolute; top: 100%; right: 0; margin-top: 0.5rem; min-width: 180px; opacity: 0; pointer-events: none; transform: translateY(-10px); transition: all 0.2s ease; z-index: 60; }
-        .user-menu:hover .user-dropdown { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .user-menu.open .user-dropdown { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+        /* Roadmap styles */
+        .roadmap-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--chalk-line);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.2s ease;
+        }
+        .roadmap-item:hover {
+            border-color: var(--card-hover-border);
+            box-shadow: 0 4px 20px var(--card-hover-shadow);
+        }
+        .vote-btn {
+            background: transparent;
+            border: 1px solid var(--chalk-line);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .vote-btn:hover { border-color: var(--cyan); }
+        .vote-btn.active-up { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; color: #22c55e; }
+        .vote-btn.active-down { background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #ef4444; }
+        .vote-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .status-planned { background: rgba(107, 159, 255, 0.2); color: #6B9FFF; }
+        .status-in_progress { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .status-completed { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+        .status-considering { background: rgba(177, 156, 217, 0.2); color: #B19CD9; }
+        .category-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            background: var(--cyan-dim);
+            color: var(--cyan);
+        }
+        .suggestion-item {
+            background: var(--glass-bg);
+            border: 1px solid var(--chalk-line);
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+        }
+        .suggestion-item:hover {
+            border-color: var(--card-hover-border);
+        }
+        .upvote-btn {
+            background: transparent;
+            border: 1px solid var(--chalk-line);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.125rem;
+            min-width: 3.5rem;
+        }
+        .upvote-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+        .upvote-btn.voted { background: rgba(0, 212, 255, 0.15); border-color: var(--cyan); color: var(--cyan); }
     </style>
 
     <style>
@@ -42,6 +124,8 @@
             --text-secondary: #94A3B8;
             /* KRITA-UPDATE: Uppdragen till 0.6 (från 0.25) för att garantera VIT färg, inte grå */
             --chalk-line: rgba(255, 255, 255, 0.6);
+            --input-border: rgba(255, 255, 255, 0.15);
+            --input-bg: rgba(0, 0, 0, 0.3);
             --glass-bg: rgba(12, 14, 18, 0.6);
             --cyan: #00D4FF;
             --cyan-dim: rgba(0, 212, 255, 0.1);
@@ -55,6 +139,8 @@
             --text-primary: #0F172A; /* Slate 900 */
             --text-secondary: #475569; /* Slate 600 */
             --chalk-line: #CBD5E1; /* Slate 300 */
+            --input-border: #CBD5E1;
+            --input-bg: #FFFFFF;
             --glass-bg: rgba(255, 255, 255, 0.8);
             --cyan: #0284C7; /* Sky 600 (Mörkare för kontrast) */
             --cyan-dim: rgba(2, 132, 199, 0.1);
@@ -68,6 +154,83 @@
             font-family: 'Inter', sans-serif;
             overflow-x: hidden;
             transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Input fields - dark mode friendly */
+        input[type="text"], input[type="email"], input[type="password"], textarea {
+            background-color: rgba(15, 23, 42, 0.8) !important;
+            border-color: rgba(255, 255, 255, 0.1) !important;
+            color: var(--text-primary) !important;
+        }
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.4) !important;
+        }
+        /* Light mode inputs */
+        body.light-theme input[type="text"],
+        body.light-theme input[type="email"],
+        body.light-theme input[type="password"],
+        body.light-theme textarea {
+            background-color: #FFFFFF !important;
+            border-color: #CBD5E1 !important;
+            color: #0F172A !important;
+        }
+        body.light-theme input::placeholder,
+        body.light-theme textarea::placeholder {
+            color: #64748B !important;
+        }
+
+        /* Badge icons - cirkulär container */
+        .badge-icon {
+            border-radius: 50%;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .badge-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Avatar initial - kontrast i båda teman */
+        .avatar-initial {
+            background: #1e293b;
+            color: white;
+        }
+        body.light-theme .avatar-initial {
+            background: white;
+            color: #1e293b;
+            border-color: #cbd5e1 !important;
+        }
+
+        /* Leaderboard toggle - tydlig aktiv state */
+        .leaderboard-toggle-active {
+            background: var(--cyan);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0, 212, 255, 0.3);
+        }
+        .leaderboard-toggle-inactive {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+        .leaderboard-toggle-inactive:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+        body.light-theme .leaderboard-toggle-active {
+            background: #0284c7;
+            color: white;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4);
+        }
+        body.light-theme .leaderboard-toggle-inactive {
+            color: #64748b;
+        }
+        body.light-theme .leaderboard-toggle-inactive:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #0f172a;
         }
 
         /* Bakgrunds-brus (Gemensamt) */
@@ -96,17 +259,165 @@
         }
         body.light-theme .nebula-glow { opacity: 0; }
 
-        /* BLUEPRINT GRID (Light Mode) */
+        /* BLUEPRINT GRID (Light Mode) - Kawaii pastell version */
         .blueprint-grid {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-image:
-                linear-gradient(rgba(15, 23, 42, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(15, 23, 42, 0.05) 1px, transparent 1px);
+                linear-gradient(rgba(147,112,219,0.04) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(107,159,255,0.04) 1px, transparent 1px);
             background-size: 40px 40px;
             z-index: -6; pointer-events: none;
             opacity: 0; transition: opacity 0.5s ease;
         }
         body.light-theme .blueprint-grid { opacity: 1; }
+
+        /* STARFIELD (Dark mode only) */
+        .starfield {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+        body.light-theme .starfield {
+            display: none;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: starfall linear infinite;
+        }
+        @keyframes starfall {
+            0% { transform: translateY(-10px); opacity: 0; }
+            10% { opacity: 0.5; }
+            90% { opacity: 0.5; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+
+        /* KAWAII SPARKLES (Light mode only) */
+        .kawaii-stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+            display: none;
+        }
+        body.light-theme .kawaii-stars {
+            display: block;
+        }
+        .sparkle {
+            position: absolute;
+            font-size: 16px;
+            animation: twinkle 3s ease-in-out infinite;
+        }
+        .sparkle.purple { color: #B19CD9; }
+        .sparkle.pink { color: #FFB5BA; }
+        .sparkle.blue { color: #6B9FFF; }
+        .sparkle.mint { color: #A8E6CF; }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(0.8) rotate(0deg); }
+            50% { opacity: 0.7; transform: scale(1.1) rotate(15deg); }
+        }
+        .sparkle.inline {
+            position: relative;
+            font-size: 0.5em;
+            vertical-align: super;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        /* HERO TITLE GRADIENT */
+        .hero-title {
+            background: linear-gradient(135deg, #00D4FF, #9370DB);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 40px rgba(0,212,255,0.3));
+        }
+        body.light-theme .hero-title {
+            background: linear-gradient(135deg, #6B9FFF, #B19CD9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 30px rgba(107,159,255,0.2));
+        }
+
+        /* LOGO TEXT */
+        .logo-text {
+            font-family: 'DM Serif Display', serif;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        /* KAWAII CARDS - unified style */
+        .kawaii-card {
+            background: linear-gradient(135deg, rgba(107,159,255,0.08), rgba(177,156,217,0.08));
+            border: 1px solid rgba(147,112,219,0.15);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(107,159,255,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .kawaii-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(107,159,255,0.12);
+        }
+        body:not(.light-theme) .kawaii-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        /* THEME TRANSITIONS - lightweight instant switch */
+        .theme-toggle:active {
+            transform: scale(0.9);
+        }
+
+        /* FLOATING ORBS */
+        .orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.06;
+            pointer-events: none;
+            z-index: -7;
+            animation: float 20s ease-in-out infinite;
+        }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: #6B9FFF;
+            top: 10%;
+            left: 10%;
+        }
+        .orb-2 {
+            width: 300px;
+            height: 300px;
+            background: #B19CD9;
+            bottom: 20%;
+            right: 15%;
+            animation-delay: -10s;
+        }
+        body.light-theme .orb {
+            opacity: 0.1;
+        }
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(30px, -30px); }
+        }
+
+        /* EDGE FADE */
+        .edge-fade {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, var(--bg-color) 90%);
+            pointer-events: none;
+            z-index: -3;
+        }
 
         h1, h2, h3, .brand-font {
             font-family: 'DM Serif Display', serif;
@@ -136,6 +447,7 @@
             text-transform: uppercase;
             font-size: 0.8rem;
             letter-spacing: 0.05em;
+            box-shadow: 0 0 15px rgba(0,212,255,0.2);
         }
         body.light-theme .btn-primary {
             background: #F1F5F9;
@@ -146,13 +458,25 @@
             background: var(--text-primary);
             color: var(--bg-color);
             border-color: var(--text-primary);
-            box-shadow: 0 0 20px rgba(125, 211, 252, 0.3);
+            box-shadow: 0 0 30px rgba(0,212,255,0.5);
             transform: translateY(-2px);
         }
         body.light-theme .btn-primary:hover {
             background: var(--cyan);
             color: #ffffff;
             border-color: var(--cyan);
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-primary:disabled:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            border-color: currentColor;
+            box-shadow: none;
+            transform: none;
         }
 
         .nav-link {
@@ -167,8 +491,8 @@
         .nav-link.active::after {
             content: '';
             position: absolute; bottom: -4px; left: 0; width: 100%; height: 1px;
-            background: var(--cyan);
-            box-shadow: 0 0 8px var(--cyan);
+            background: var(--text-secondary);
+            opacity: 0.3;
         }
 
         /* Theme Toggle Button */
@@ -194,6 +518,20 @@
         .stat-card {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 1.5rem; text-align: center;
+            background: linear-gradient(135deg, rgba(107,159,255,0.08), rgba(177,156,217,0.08)) !important;
+            border: 1px solid rgba(147,112,219,0.15) !important;
+            border-radius: 20px !important;
+            box-shadow: 0 4px 20px rgba(107,159,255,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(107,159,255,0.12);
+        }
+        body:not(.light-theme) .stat-card {
+            background: rgba(15, 23, 42, 0.6) !important;
+            border-color: rgba(255,255,255,0.08) !important;
+            backdrop-filter: blur(10px);
         }
         .stat-value {
             font-family: 'DM Serif Display', serif;
@@ -204,7 +542,7 @@
         body.light-theme .stat-value { text-shadow: none; }
         .stat-label {
             font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em;
-            color: var(--cyan); margin-top: 0.5rem;
+            color: var(--text-secondary); margin-top: 0.5rem;
         }
 
         .submission-card {
@@ -296,29 +634,6 @@
             color: var(--text-secondary);
             margin-top: 0.5rem;
         }
-        /* Flip animation */
-        .flip-card.flipping .flip-card-inner {
-            animation: flipCard 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes flipCard {
-            0% {
-                transform: perspective(300px) rotateX(0deg);
-            }
-            50% {
-                transform: perspective(300px) rotateX(-90deg);
-                background: var(--cyan-dim);
-            }
-            100% {
-                transform: perspective(300px) rotateX(0deg);
-            }
-        }
-        .flip-card.flipping .number {
-            animation: numberPulse 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        @keyframes numberPulse {
-            0%, 100% { opacity: 1; }
-            45%, 55% { opacity: 0; }
-        }
         body.light-theme .flip-card-inner {
             background: rgba(255,255,255,0.8);
         }
@@ -333,12 +648,166 @@
             background: linear-gradient(90deg, transparent, var(--chalk-line), transparent);
             opacity: 0.5;
         }
+
+        /* Inspiration cards - kawaii style */
+        .inspo-card {
+            background: linear-gradient(135deg, rgba(107,159,255,0.08), rgba(177,156,217,0.08));
+            border: 1px solid rgba(147,112,219,0.15);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(107,159,255,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .inspo-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(107,159,255,0.12);
+        }
+        body:not(.light-theme) .inspo-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+        }
+        .inspo-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+            background: linear-gradient(135deg, #6B9FFF, #B19CD9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .inspo-tag {
+            background: rgba(107,159,255,0.15);
+            color: #6B9FFF;
+            border-radius: 999px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+        }
+        body:not(.light-theme) .inspo-tag {
+            background: rgba(107,159,255,0.2);
+        }
+
+        /* Profile page - Kawaii style */
+        .profile-card {
+            background: linear-gradient(135deg, rgba(107,159,255,0.08), rgba(177,156,217,0.08));
+            border: 1px solid rgba(147,112,219,0.15);
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(107,159,255,0.08);
+        }
+        body:not(.light-theme) .profile-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-color: rgba(255,255,255,0.08);
+            backdrop-filter: blur(10px);
+        }
+        .profile-avatar {
+            border: 3px solid #B19CD9;
+            box-shadow: 0 0 20px rgba(177,156,217,0.3);
+        }
+        .xp-bar {
+            background: linear-gradient(90deg, #6B9FFF, #B19CD9);
+        }
+
+        /* GenPRD promo */
+        .genprd-promo {
+            background: linear-gradient(135deg, rgba(147,112,219,0.1), rgba(0,212,255,0.05));
+            border: 1px solid var(--chalk-line);
+            border-radius: 16px;
+            padding: 32px;
+        }
+        body.light-theme .genprd-promo {
+            background: linear-gradient(135deg, rgba(147,112,219,0.08), rgba(0,212,255,0.04));
+        }
     </style>
 </head>
 <body class="light-theme">
 
     <!-- TOAST -->
     <div id="toast" class="toast"></div>
+
+    <!-- ONBOARDING MODAL (för nya användare utan username) -->
+    <div id="onboarding-modal" class="modal-overlay" onclick="event.stopPropagation()">
+        <div class="modal-content glass-panel p-8">
+            <div class="text-center mb-6">
+                <i class="ph-anchor text-5xl text-[var(--cyan)] mb-4"></i>
+                <h3 class="text-2xl font-bold text-[var(--text-primary)]">Välkommen ombord!</h3>
+                <p class="text-[var(--text-secondary)] mt-2">Välj ditt @handle för att börja skeppa.</p>
+            </div>
+            <form id="onboarding-form" onsubmit="handleOnboarding(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Ditt @handle *</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]">@</span>
+                            <input type="text" id="onboarding-username" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 pl-8 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="ditt_namn" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+">
+                        </div>
+                        <p id="username-status" class="text-xs mt-1 text-[var(--text-secondary)]">3-20 tecken, bokstäver, siffror och _</p>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Visningsnamn (valfritt)</label>
+                        <input type="text" id="onboarding-displayname" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="Gustav Hemmingsson">
+                    </div>
+                </div>
+                <button type="submit" id="onboarding-submit" class="btn-primary w-full mt-6 py-3 flex items-center justify-center gap-2">
+                    <span id="onboarding-btn-text"><i class="ph-rocket-launch"></i> Börja skeppa</span>
+                    <span id="onboarding-spinner" class="spinner hidden"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- PROJECT DETAIL MODAL -->
+    <div id="project-modal" class="modal-overlay" onclick="if(event.target === this) closeProjectModal()">
+        <div class="modal-content glass-panel p-0 max-w-2xl w-full mx-4 overflow-hidden">
+            <!-- Hero image with gradient overlay -->
+            <div id="project-modal-image" class="h-64 bg-gradient-to-br from-[var(--cyan)]/20 via-[var(--bg-color)] to-purple-500/20 flex items-center justify-center overflow-hidden relative">
+                <i class="ph-rocket-launch text-6xl text-[var(--cyan)] opacity-20"></i>
+                <!-- Close button overlay -->
+                <button onclick="closeProjectModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm text-white hover:bg-black/60 flex items-center justify-center transition-all hover:scale-105">
+                    <i class="ph-x text-xl"></i>
+                </button>
+                <!-- Points badge -->
+                <div id="project-modal-points-badge" class="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-[var(--cyan)] text-white text-sm font-bold shadow-lg">
+                    +10p
+                </div>
+            </div>
+
+            <div class="p-8">
+                <!-- Title & User -->
+                <div class="mb-6">
+                    <h3 id="project-modal-title" class="text-3xl font-bold text-[var(--text-primary)] font-serif mb-4">Projektnamn</h3>
+
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <div class="flex items-center gap-3">
+                            <div id="project-modal-avatar" class="w-12 h-12 rounded-full bg-gradient-to-br from-[var(--cyan)] to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-md">?</div>
+                            <div>
+                                <div id="project-modal-username" class="text-[var(--text-primary)] font-semibold">@user</div>
+                                <div id="project-modal-points" class="text-xs text-[var(--text-secondary)]">Skeppare</div>
+                            </div>
+                        </div>
+                        <div id="project-modal-tags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div class="mb-8 p-4 rounded-lg bg-[var(--bg-color)] border border-[var(--chalk-line)]">
+                    <p id="project-modal-description" class="text-[var(--text-secondary)] leading-relaxed">Beskrivning...</p>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="flex flex-wrap gap-3">
+                    <a id="project-modal-demo" href="#" target="_blank" class="btn-primary flex items-center gap-2 px-6 py-3 hidden">
+                        <i class="ph-rocket-launch"></i> Testa live
+                    </a>
+                    <a id="project-modal-repo" href="#" target="_blank" class="btn-ghost flex items-center gap-2 px-5 py-3 hidden">
+                        <i class="ph-github-logo"></i> GitHub
+                    </a>
+                    <a id="project-modal-video" href="#" target="_blank" class="btn-ghost flex items-center gap-2 px-5 py-3 hidden">
+                        <i class="ph-play-circle"></i> Video
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- AUTH MODAL -->
     <div id="auth-modal" class="modal-overlay" onclick="if(event.target === this) closeAuthModal()">
@@ -351,15 +820,15 @@
                 <div class="space-y-4">
                     <div id="username-field" class="hidden">
                         <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Användarnamn</label>
-                        <input type="text" id="auth-username" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="@ditt_namn">
+                        <input type="text" id="auth-username" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="@ditt_namn">
                     </div>
                     <div>
                         <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Email</label>
-                        <input type="email" id="auth-email" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="din@email.se" required>
+                        <input type="email" id="auth-email" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="din@email.se" required>
                     </div>
                     <div>
                         <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Lösenord</label>
-                        <input type="password" id="auth-password" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="••••••••" required minlength="6">
+                        <input type="password" id="auth-password" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="••••••••" required minlength="6">
                     </div>
                 </div>
                 <button type="submit" id="auth-submit" class="btn-primary w-full mt-6 py-3 flex items-center justify-center gap-2">
@@ -374,32 +843,99 @@
         </div>
     </div>
 
+    <!-- EDIT PROFILE MODAL -->
+    <div id="edit-profile-modal" class="modal-overlay hidden" onclick="if(event.target === this) closeEditProfileModal()">
+        <div class="modal-content glass-panel p-8" style="max-width: 420px;">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-[var(--text-primary)]">Redigera profil</h3>
+                <button onclick="closeEditProfileModal()" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-2xl">&times;</button>
+            </div>
+            <form id="edit-profile-form" onsubmit="handleEditProfile(event)">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Visningsnamn</label>
+                        <input type="text" id="edit-display-name" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[#6B9FFF] focus:outline-none" placeholder="Ditt namn">
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">
+                            <i class="ph ph-twitter-logo"></i> X / Twitter
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[var(--text-secondary)]">@</span>
+                            <input type="text" id="edit-x-handle" class="flex-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[#6B9FFF] focus:outline-none" placeholder="ditt_handle">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">
+                            <i class="ph ph-github-logo"></i> GitHub
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[var(--text-secondary)]">@</span>
+                            <input type="text" id="edit-github-handle" class="flex-1 bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[#6B9FFF] focus:outline-none" placeholder="ditt_github">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">
+                            <i class="ph ph-linkedin-logo"></i> LinkedIn URL
+                        </label>
+                        <input type="url" id="edit-linkedin-url" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[#6B9FFF] focus:outline-none" placeholder="https://linkedin.com/in/...">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary w-full mt-6 py-3">Spara</button>
+            </form>
+        </div>
+    </div>
+
     <!-- BAKGRUND -->
     <canvas id="starfall"></canvas> <!-- Partiklar för Dark Mode -->
     <div class="nebula-glow"></div> <!-- Ljusglimt för Dark Mode -->
     <div class="blueprint-grid"></div> <!-- Rutnät för Light Mode -->
+    <div class="starfield" aria-hidden="true"></div> <!-- Fallande stjärnor (dark) -->
+    <div class="kawaii-stars" aria-hidden="true">
+        <span class="sparkle purple" style="top:8%;left:12%;animation-delay:0s">✦</span>
+        <span class="sparkle pink" style="top:15%;right:18%;animation-delay:0.5s">✧</span>
+        <span class="sparkle blue" style="top:25%;left:8%;animation-delay:1s">✦</span>
+        <span class="sparkle mint" style="top:12%;right:35%;animation-delay:1.5s">✧</span>
+        <span class="sparkle purple" style="top:35%;right:12%;animation-delay:2s">✦</span>
+        <span class="sparkle pink" style="top:45%;left:20%;animation-delay:0.3s">✧</span>
+        <span class="sparkle blue" style="top:60%;right:25%;animation-delay:0.8s">✦</span>
+        <span class="sparkle mint" style="top:75%;left:15%;animation-delay:1.2s">✧</span>
+        <span class="sparkle purple" style="top:55%;left:5%;animation-delay:1.8s">✦</span>
+        <span class="sparkle pink" style="top:80%;right:10%;animation-delay:2.2s">✧</span>
+    </div>
+    <div class="orb orb-1" aria-hidden="true"></div> <!-- Floating orb 1 -->
+    <div class="orb orb-2" aria-hidden="true"></div> <!-- Floating orb 2 -->
+    <div class="edge-fade" aria-hidden="true"></div> <!-- Kantfade -->
 
     <!-- HEADER -->
     <header class="fixed w-full top-0 z-50 glass-panel border-t-0 border-l-0 border-r-0 rounded-none">
         <div class="container mx-auto px-6 h-20 flex justify-between items-center">
             <!-- LOGO -->
             <a href="#" onclick="showSection('start')" class="flex items-center gap-3 group">
-                <img src="https://raw.githubusercontent.com/GusHem/Logga-utan-text/refs/heads/main/Final%20logo%20no%20text.svg" alt="NordSym" class="h-10 opacity-90 group-hover:opacity-100 transition-opacity">
-                <div class="flex flex-col">
-                    <span class="brand-font text-xl leading-none tracking-wide text-[var(--text-primary)]">SKEPPA.NU</span>
-                    <span class="text-[10px] uppercase tracking-[0.2em] text-[var(--cyan)]">Varvet</span>
-                </div>
+                <img src="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Gra%CC%88vling%20flownode%20avatar.svg" alt="" class="h-10 opacity-90 group-hover:opacity-100 transition-opacity">
+                <span class="logo-text text-xl tracking-wide"><span style="color:#6B9FFF">SKEPPA</span><span style="color:#B19CD9">.</span><span style="color:#FFB5BA">NU</span></span>
             </a>
 
             <!-- NAV (DESKTOP) -->
-            <nav class="hidden md:flex gap-8">
+            <nav class="flex gap-8" style="display: none;" id="main-nav">
                 <button onclick="showSection('start')" class="nav-link active" data-target="start">Start</button>
                 <button onclick="showSection('leaderboard')" class="nav-link" data-target="leaderboard">Topplistan</button>
-                <button onclick="showSection('about')" class="nav-link" data-target="about">Om Skeppa.nu</button>
+                <button onclick="showSection('roadmap')" class="nav-link" data-target="roadmap">Roadmap</button>
+                <button onclick="showSection('about')" class="nav-link" data-target="about">Hur funkar det?</button>
             </nav>
+            <style>
+                @media (min-width: 768px) {
+                    #main-nav { display: flex !important; }
+                }
+            </style>
 
             <!-- RIGHT ACTIONS -->
             <div class="flex items-center gap-4">
+                <!-- Skeppa CTA (logged in only) -->
+                <button id="header-skeppa-cta" onclick="showSection('build')" class="btn-primary hidden items-center gap-2">
+                    <i class="ph-rocket-launch"></i> Skeppa
+                </button>
+
                 <button id="theme-toggle" class="theme-toggle" aria-label="Växla tema">
                     <i class="ph ph-moon"></i>
                 </button>
@@ -414,20 +950,20 @@
 
                 <!-- User menu (logged in) -->
                 <div id="user-menu" class="user-menu hidden">
-                    <button class="flex items-center gap-2 btn-ghost">
-                        <div id="user-avatar" class="w-8 h-8 rounded-full bg-[var(--cyan)] flex items-center justify-center text-white text-sm font-bold">?</div>
+                    <button id="user-menu-btn" class="flex items-center gap-2 btn-ghost">
+                        <div id="user-avatar" class="w-8 h-8 rounded-full avatar-initial border-2 border-[var(--chalk-line)] flex items-center justify-center text-sm font-bold shadow-lg">?</div>
                         <span id="user-name" class="hidden sm:inline text-[var(--text-primary)]">@user</span>
-                        <i class="ph-caret-down text-xs"></i>
+                        <i class="ph-caret-down text-xs" id="user-menu-arrow"></i>
                     </button>
                     <div class="user-dropdown glass-panel p-2">
-                        <button onclick="showSection('build')" class="w-full text-left px-4 py-2 rounded hover:bg-[var(--cyan-dim)] text-[var(--text-primary)] flex items-center gap-2">
-                            <i class="ph-paper-plane-right"></i> Skeppa projekt
+                        <button onclick="closeUserMenu(); showSection('profile')" class="w-full text-left px-4 py-2 rounded hover:bg-[var(--cyan-dim)] text-[var(--text-primary)] flex items-center gap-2">
+                            <i class="ph-user-circle"></i> Min Profil
                         </button>
-                        <button onclick="showMySubmissions()" class="w-full text-left px-4 py-2 rounded hover:bg-[var(--cyan-dim)] text-[var(--text-secondary)] flex items-center gap-2">
-                            <i class="ph-folder"></i> Mina skeppningar
+                        <button onclick="closeUserMenu(); showSection('build')" class="w-full text-left px-4 py-2 rounded hover:bg-[var(--cyan-dim)] text-[var(--text-primary)] flex items-center gap-2">
+                            <i class="ph-paper-plane-right"></i> Skeppa
                         </button>
                         <hr class="my-2 border-[var(--chalk-line)]">
-                        <button onclick="handleLogout()" class="w-full text-left px-4 py-2 rounded hover:bg-red-500/10 text-red-400 flex items-center gap-2">
+                        <button onclick="closeUserMenu(); handleLogout()" class="w-full text-left px-4 py-2 rounded hover:bg-red-500/10 text-red-400 flex items-center gap-2">
                             <i class="ph-sign-out"></i> Logga ut
                         </button>
                     </div>
@@ -442,21 +978,17 @@
         <section id="section-start" class="fade-in-section">
             <!-- HERO -->
             <div class="text-center mb-16 relative">
-                <!-- KRITA-UPDATE: border-2 på batchen -->
-                <div class="inline-block px-3 py-1 border-2 border-[var(--chalk-line)] rounded-full text-xs font-mono text-[var(--cyan)] mb-4 bg-black/5 backdrop-blur-sm">
-                    ● JANUARI-SKEPPNING LIVE
-                </div>
-                <h1 class="text-5xl md:text-7xl text-[var(--text-primary)] mb-6 leading-tight">
-                    Ett skeppat projekt.<br>
-                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-[var(--text-primary)] to-[var(--text-secondary)]">Varje månad.</span>
+                <h1 class="text-5xl md:text-7xl mb-6 leading-tight hero-title">
+                    Från landkrabba till skeppare<br>
+                    på en månad. <span class="sparkle inline purple">✦</span>
                 </h1>
                 <p class="text-[var(--text-secondary)] text-lg max-w-2xl mx-auto mb-8">
-                    Skeppa.nu är platsen där du går från idé till lansering. Inga ursäkter. Bygg med AI, sjösätt ditt projekt och klättra på redarlistan.
+                    Bygg med AI. Skeppa projektet. Ta platsen på topplistan.
                 </p>
 
                 <!-- COUNTDOWN -->
                 <div class="text-center mb-4">
-                    <span id="countdown-label" class="text-sm uppercase tracking-widest text-[var(--cyan)]">Skeppas i Februari</span>
+                    <span id="countdown-label" class="text-sm uppercase tracking-widest text-[var(--cyan)]">Skeppa Nu</span>
                 </div>
                 <div class="flip-clock mb-12">
                     <div class="flip-segment">
@@ -523,82 +1055,93 @@
                     <div class="stat-label">Landkrabbor</div>
                 </div>
                 <div class="glass-panel stat-card">
-                    <div class="stat-value text-[var(--cyan)]" id="stat-batch">—</div>
-                    <div class="stat-label">Månadens Batch</div>
+                    <div class="stat-value text-[var(--cyan)]" id="stat-batch-text">—</div>
+                    <div class="stat-label flex items-center justify-center gap-1.5">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                        Live
+                    </div>
                 </div>
                 <div class="glass-panel stat-card">
                     <div class="stat-value" id="stat-ships">0</div>
-                    <div class="stat-label">Sjösatta Skepp</div>
+                    <div class="stat-label">Skeppningar</div>
                 </div>
             </div>
 
             <!-- RECENT SUBMISSIONS -->
             <div class="flex justify-between items-end mb-6">
-                <h3 class="text-2xl text-[var(--text-primary)]">Nyligen Sjösatt</h3>
+                <h3 class="text-2xl text-[var(--text-primary)]">Senaste projekt</h3>
                 <a href="#" onclick="showSection('leaderboard')" class="text-sm text-[var(--cyan)] hover:underline transition-colors">Visa alla →</a>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- CARD 1 -->
-                <div class="glass-panel submission-card group cursor-pointer">
-                    <div class="card-image">
-                        <i class="ph-kanban text-4xl"></i>
-                    </div>
-                    <div class="p-5">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">VibeSaaS MVP</h4>
-                            <span class="badge-pill badge-cyan">AI</span>
+            <div id="recent-submissions-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Empty state (visas tills det finns submissions) -->
+                <div id="empty-submissions" class="col-span-full glass-panel p-12 text-center">
+                    <i class="ph-anchor text-6xl text-[var(--text-secondary)] opacity-50 mb-4"></i>
+                    <h4 class="text-xl text-[var(--text-primary)] mb-2">Inget skeppat än</h4>
+                    <p class="text-[var(--text-secondary)] mb-6">Bli först att leverera!</p>
+                    <button onclick="currentUser ? showSection('build') : openAuthModal('signup')" class="btn-primary">
+                        <i class="ph-rocket-launch"></i> Skeppa nu
+                    </button>
+                </div>
+            </div>
+
+            <!-- VAD RÄKNAS SECTION -->
+            <div class="mt-16">
+                <div class="flex justify-between items-end mb-6">
+                    <h3 class="text-2xl text-[var(--text-primary)]">Vad räknas?</h3>
+                    <span class="text-sm text-[var(--text-secondary)]">Inspiration för ditt nästa projekt</span>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Kategori 1: AI-verktyg -->
+                    <div class="inspo-card">
+                        <i class="ph ph-robot inspo-icon"></i>
+                        <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif mb-2">AI-verktyg</h4>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4">Chatbots, agenter, prompt-verktyg eller något helt annat. Bygg med AI, skeppa det.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Chatbot</span>
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">RAG-app</span>
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Agent</span>
                         </div>
-                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">En n8n-orkestrator som bygger React-komponenter baserat på röstkommandon.</p>
-                        <div class="flex justify-between items-center text-xs">
-                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
-                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">K</div>
-                                @keen_dev
-                            </div>
-                            <span class="text-[var(--text-secondary)] opacity-70"><i class="ph-clock"></i> 2h</span>
+                    </div>
+
+                    <!-- Kategori 2: Automationer -->
+                    <div class="inspo-card">
+                        <i class="ph ph-flow-arrow inspo-icon"></i>
+                        <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif mb-2">Automationer</h4>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4">Workflows, scripts, flöden. Om du byggt det med AI räknas det.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">n8n</span>
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Make</span>
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Script</span>
+                        </div>
+                    </div>
+
+                    <!-- Kategori 3: Appar & Spel -->
+                    <div class="inspo-card">
+                        <i class="ph ph-device-mobile inspo-icon"></i>
+                        <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif mb-2">Appar & Spel</h4>
+                        <p class="text-sm text-[var(--text-secondary)] mb-4">Webbappar, mobilappar, roliga experiment. Galet eller praktiskt, huvudsaken är att du skeppar.</p>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Webb</span>
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Mobil</span>
+                            <span class="text-xs px-2 py-1 rounded bg-[var(--bg-color)] text-[var(--text-secondary)]">Extension</span>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- CARD 2 -->
-                <div class="glass-panel submission-card group cursor-pointer">
-                    <div class="card-image">
-                        <i class="ph-robot text-4xl"></i>
+            <!-- GENPRD PROMO -->
+            <div class="mt-16 genprd-promo">
+                <div class="flex flex-col md:flex-row items-center gap-8">
+                    <div class="flex-1 text-center md:text-left">
+                        <h3 class="text-2xl font-bold text-[var(--text-primary)] font-serif mb-3">Från idé till PRD på sekunder</h3>
+                        <p class="text-[var(--text-secondary)] mb-6">Använd GenPRD för att skapa en AI-redo PRD som hjälper dig bygga snabbare.</p>
+                        <a href="https://genprd.se" target="_blank" class="btn-primary inline-flex items-center gap-2">
+                            Testa GenPRD <i class="ph ph-arrow-right"></i>
+                        </a>
                     </div>
-                    <div class="p-5">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">The Agency</h4>
-                            <span class="badge-pill badge-gold">TOPP</span>
-                        </div>
-                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">Simulation av ett företag där 5 Claude-instanser pratar med varandra via Markdown.</p>
-                        <div class="flex justify-between items-center text-xs">
-                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
-                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">S</div>
-                                @simon_arch
-                            </div>
-                            <span class="text-[var(--text-secondary)] opacity-70"><i class="ph-clock"></i> 5h</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- CARD 3 -->
-                <div class="glass-panel submission-card group cursor-pointer">
-                    <div class="card-image">
-                        <i class="ph-chart-polar text-4xl"></i>
-                    </div>
-                    <div class="p-5">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">AEO Radar</h4>
-                            <span class="badge-pill">DATA</span>
-                        </div>
-                        <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">Visualiserar hur ofta ditt varumärke nämns i LLM-svar jämfört med konkurrenter.</p>
-                        <div class="flex justify-between items-center text-xs">
-                            <div class="flex items-center gap-2 text-[var(--text-secondary)]">
-                                <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">N</div>
-                                @nord_fan
-                            </div>
-                            <span class="text-[var(--text-secondary)] opacity-70"><i class="ph-clock"></i> 1d</span>
-                        </div>
+                    <div class="flex-1">
+                        <img src="https://firebasestorage.googleapis.com/v0/b/nordsym-funnel.firebasestorage.app/o/Ska%CC%88rmavbild%202026-01-10%20kl.%2013.18.43.png?alt=media&token=43b8aecb-ff77-4724-932e-9a3d3a0e835a" alt="GenPRD" class="rounded-xl shadow-2xl border border-[var(--chalk-line)] max-w-full">
                     </div>
                 </div>
             </div>
@@ -606,82 +1149,135 @@
 
         <!-- SECTION: LEADERBOARD -->
         <section id="section-leaderboard" class="hidden fade-in-section">
-            <div class="text-center mb-12">
-                <span class="text-[var(--cyan)] text-xs tracking-widest uppercase">Januari 2026</span>
-                <h2 class="text-4xl text-[var(--text-primary)] mb-4">Redarlistan</h2>
-                <p class="text-[var(--text-secondary)]">De som skeppar mest och bäst just nu.</p>
+            <div class="text-center mb-8">
+                <h2 class="text-4xl text-[var(--text-primary)] mb-4">Topplistan <span class="sparkle inline mint">✧</span></h2>
+                <p class="text-[var(--text-secondary)] mb-6">De som skeppar mest och bäst.</p>
+
+                <!-- Toggle: Månad / All-time -->
+                <div class="inline-flex gap-1 p-1 rounded-full bg-[var(--glass-bg)] border-2 border-[var(--chalk-line)]">
+                    <button id="leaderboard-monthly-btn" onclick="setLeaderboardMode('monthly')" class="leaderboard-toggle-active px-4 py-2 rounded-full text-sm font-medium transition-all">
+                        Denna månad
+                    </button>
+                    <button id="leaderboard-alltime-btn" onclick="setLeaderboardMode('alltime')" class="leaderboard-toggle-inactive px-4 py-2 rounded-full text-sm font-medium transition-all">
+                        All-time
+                    </button>
+                </div>
             </div>
 
-            <div class="glass-panel overflow-hidden max-w-4xl mx-auto">
-                <div class="p-4 border-b border-[var(--chalk-line)] flex text-xs text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
+            <div id="leaderboard-container" class="glass-panel overflow-hidden max-w-4xl mx-auto">
+                <div class="leaderboard-header p-4 border-b border-[var(--chalk-line)] flex text-xs text-[var(--text-secondary)] uppercase tracking-wider font-semibold">
                     <div class="w-16 text-center">Rank</div>
-                    <div class="flex-grow">Arkitekt</div>
+                    <div class="flex-grow">Skeppare</div>
                     <div class="w-32 text-center">Skeppat</div>
                     <div class="w-24 text-right">Poäng</div>
                 </div>
+                <!-- Empty state -->
+                <div id="leaderboard-empty" class="p-12 text-center">
+                    <i class="ph-trophy text-5xl text-[var(--text-secondary)] opacity-50 mb-4"></i>
+                    <h4 class="text-lg text-[var(--text-primary)] mb-2">Topplistan fylls snart...</h4>
+                    <p class="text-sm text-[var(--text-secondary)]">Bli först att ta förstaplatsen!</p>
+                </div>
+                <!-- Rows populated by JS -->
+            </div>
 
-                <!-- ROW 1 -->
-                <div class="leaderboard-row p-4 flex items-center">
-                    <div class="w-16 text-center rank-number text-yellow-400">1</div>
-                    <div class="flex-grow flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">S</div>
-                        <div>
-                            <div class="text-[var(--text-primary)] font-medium">@simon_arch</div>
-                            <div class="text-[10px] text-[var(--text-secondary)] flex gap-1 mt-0.5">
-                                <span class="badge-pill badge-gold text-[8px] py-0 px-1">MVP</span>
+            <!-- SPELREGLER & BADGES -->
+            <div class="max-w-4xl mx-auto mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Spelregler -->
+                <div class="glass-panel p-6">
+                    <h4 class="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                        <i class="ph ph-list-checks text-[var(--cyan)]"></i> Spelregler
+                    </h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <i class="ph ph-sailboat text-lg text-[var(--cyan)]"></i>
+                            <span><strong class="text-[var(--text-primary)]">Skeppa</strong> = 10 XP</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <i class="ph ph-anchor text-lg text-[var(--cyan)]"></i>
+                            <span><strong class="text-[var(--text-primary)]">Få en röst</strong> = 50 XP</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <i class="ph ph-check-square text-lg text-[var(--cyan)]"></i>
+                            <span>1 röst per skeppare per månad</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <i class="ph ph-arrows-clockwise text-lg text-[var(--cyan)]"></i>
+                            <span>Topplistan nollställs varje månad</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <i class="ph ph-infinity text-lg text-[var(--cyan)]"></i>
+                            <span>XP och utmärkelser är för evigt</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utmärkelser -->
+                <div class="glass-panel p-6">
+                    <h4 class="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                        <i class="ph ph-trophy text-[var(--cyan)]"></i> Utmärkelser
+                    </h4>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <div class="badge-icon w-6 h-6 flex-shrink-0"><img src="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Jungfru.svg" alt="Jungfrufärd"></div>
+                            <div>
+                                <strong class="text-[var(--text-primary)]">Jungfrufärd</strong>
+                                <span class="opacity-70">Skeppa ditt första projekt</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <div class="badge-icon w-6 h-6 flex-shrink-0"><img src="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/dubbel.svg" alt="Dubbellast"></div>
+                            <div>
+                                <strong class="text-[var(--text-primary)]">Dubbellast</strong>
+                                <span class="opacity-70">Två skeppningar samma månad</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <div class="badge-icon w-6 h-6 flex-shrink-0"><img src="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/trippel.svg" alt="Hattrick"></div>
+                            <div>
+                                <strong class="text-[var(--text-primary)]">Hattrick</strong>
+                                <span class="opacity-70">Tre skeppningar samma månad</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <div class="badge-icon w-6 h-6 flex-shrink-0"><img src="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/kapten%20(1).svg" alt="Kapten"></div>
+                            <div>
+                                <strong class="text-[var(--text-primary)]">Kapten</strong>
+                                <span class="opacity-70">Fem skeppningar samma månad</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 text-[var(--text-secondary)]">
+                            <div class="badge-icon w-6 h-6 flex-shrink-0"><img src="https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Ai-Arkitekt.svg" alt="AI-Arkitekt"></div>
+                            <div>
+                                <strong class="text-[var(--text-primary)]">AI-Arkitekt</strong>
+                                <span class="opacity-70">Skeppa med AI-tagg</span>
                             </div>
                         </div>
                     </div>
-                    <div class="w-32 text-center text-[var(--text-secondary)]">3</div>
-                    <div class="w-24 text-right font-mono text-[var(--cyan)] font-bold">420</div>
-                </div>
-
-                <!-- ROW 2 -->
-                <div class="leaderboard-row p-4 flex items-center">
-                    <div class="w-16 text-center rank-number text-[var(--text-secondary)]">2</div>
-                    <div class="flex-grow flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">K</div>
-                        <div>
-                            <div class="text-[var(--text-primary)] font-medium">@keen_dev</div>
-                        </div>
-                    </div>
-                    <div class="w-32 text-center text-[var(--text-secondary)]">2</div>
-                    <div class="w-24 text-right font-mono text-[var(--text-primary)] font-bold">280</div>
-                </div>
-
-                <!-- ROW 3 -->
-                <div class="leaderboard-row p-4 flex items-center">
-                    <div class="w-16 text-center rank-number text-orange-700">3</div>
-                    <div class="flex-grow flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">A</div>
-                        <div>
-                            <div class="text-[var(--text-primary)] font-medium">@ai_builder_99</div>
-                        </div>
-                    </div>
-                    <div class="w-32 text-center text-[var(--text-secondary)]">1</div>
-                    <div class="w-24 text-right font-mono text-[var(--text-primary)] font-bold">150</div>
                 </div>
             </div>
         </section>
 
         <!-- SECTION: ABOUT -->
         <section id="section-about" class="hidden fade-in-section max-w-3xl mx-auto">
-            <h2 class="text-4xl text-[var(--text-primary)] mb-8 text-center">Hur fungerar Skeppa.nu?</h2>
+            <h2 class="text-4xl text-[var(--text-primary)] mb-4 text-center">Hur fungerar Skeppa.nu? <span class="sparkle inline blue">✦</span></h2>
+            <p class="text-center text-[var(--text-secondary)] mb-12 text-lg max-w-xl mx-auto">
+                Bygg med AI. Skeppa tillsammans. Samla XP och lås upp utmärkelser på vägen mot Level 100.
+            </p>
 
             <div class="space-y-6">
                 <div class="glass-panel p-6 flex gap-6 items-start">
                     <div class="text-4xl text-[var(--cyan)] font-serif opacity-50">01</div>
                     <div>
                         <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Bygg något (snabbt)</h4>
-                        <p class="text-[var(--text-secondary)] leading-relaxed">Varje månad öppnas en ny utmaning. Temat är valfritt men rekommenderat. Målet är att använda AI-verktyg för att gå från idé till fungerande prototyp.</p>
+                        <p class="text-[var(--text-secondary)] leading-relaxed">Varje månad har ett tema. Följ det eller kör eget, du bestämmer. Använd AI-verktyg för att gå från idé till fungerande prototyp.</p>
                     </div>
                 </div>
 
                 <div class="glass-panel p-6 flex gap-6 items-start">
                     <div class="text-4xl text-[var(--cyan)] font-serif opacity-50">02</div>
                     <div>
-                        <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Sjösätt (Submitta)</h4>
-                        <p class="text-[var(--text-secondary)] leading-relaxed">Dela din länk innan månaden är slut. Det kan vara en webbapp, ett GitHub-repo eller en video på ett fungerande n8n-flöde.</p>
+                        <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Skeppa ditt projekt</h4>
+                        <p class="text-[var(--text-secondary)] leading-relaxed">Dela din länk innan månaden är slut. Webbapp, repo, demo-video, automation. Om du byggt det räknas det.</p>
                     </div>
                 </div>
 
@@ -689,7 +1285,7 @@
                     <div class="text-4xl text-[var(--cyan)] font-serif opacity-50">03</div>
                     <div>
                         <h4 class="text-xl text-[var(--text-primary)] font-bold mb-2">Samla Utmärkelser</h4>
-                        <p class="text-[var(--text-secondary)] leading-relaxed">Få poäng för momentum. Samla badges som "Dubbellast" (2 skeppningar/mån) eller "Jungfrufärd" (Första bygget).</p>
+                        <p class="text-[var(--text-secondary)] leading-relaxed">Skeppa projekt, få XP. Samla utmärkelser som "Dubbellast" (2 skeppningar/mån) eller "Jungfrufärd" (Första bygget).</p>
                     </div>
                 </div>
             </div>
@@ -701,7 +1297,7 @@
 
                     <details class="glass-panel p-4 group">
                         <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
-                            Vad räknas som en sjösättning?
+                            Vad räknas som en skeppning?
                             <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
                         </summary>
                         <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
@@ -711,11 +1307,11 @@
 
                     <details class="glass-panel p-4 group">
                         <summary class="cursor-pointer font-bold text-[var(--text-primary)] flex justify-between items-center list-none select-none">
-                            Kan jag sjösätta flera gånger per månad?
+                            Kan jag skeppa flera gånger per månad?
                             <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
                         </summary>
                         <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
-                            Ja. Vi uppmuntrar momentum – du kan registrera upp till 5 skeppningar per månad för att samla poäng.
+                            Ja! Du kan registrera upp till 5 skeppningar per månad.
                         </p>
                     </details>
 
@@ -725,7 +1321,7 @@
                             <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
                         </summary>
                         <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
-                            Din första sjösättning i månaden ger <strong>10 poäng</strong>. Varje efterföljande ger <strong>5 poäng</strong> (upp till 5 st). Utmärkelser (Badges) delas ut automatiskt vid milstolpar och ger <strong>+2 poäng</strong> vardera.
+                            Varje skeppning ger <strong>10 XP</strong>. Får du en röst på ditt projekt: <strong>+50 XP</strong>. Utmärkelser låses upp automatiskt vid milstolpar.
                         </p>
                     </details>
 
@@ -775,7 +1371,7 @@
                             <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
                         </summary>
                         <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
-                            Nej. Smått, konstigt, lekfullt eller praktiskt – om det är skeppat så hör det hemma på Skeppa.nu.
+                            Nej. Smått, konstigt, lekfullt eller praktiskt. Om det är skeppat hör det hemma här.
                         </p>
                     </details>
 
@@ -785,10 +1381,34 @@
                             <i class="ph-caret-down group-open:rotate-180 transition-transform text-[var(--cyan)]"></i>
                         </summary>
                         <p class="mt-4 text-[var(--text-secondary)] text-sm leading-relaxed border-t border-[var(--chalk-line)] pt-4">
-                            Varje månad har en definierad start och slut. Vi följer UTC-tid så att alla har samma deadline oavsett var man befinner sig.
+                            Sista dagen i månaden, 23:59 CET. Sen börjar nästa månad!
                         </p>
                     </details>
 
+                </div>
+            </div>
+
+            <!-- Call to action -->
+            <div class="mt-16 text-center glass-panel p-8">
+                <p class="text-xl text-[var(--text-primary)] mb-4 font-serif">
+                    En hamn för dig som vill bygga och experimentera.
+                </p>
+                <p class="text-[var(--text-secondary)] mb-6">
+                    Gör din jungfrufärd. Från idé till skeppad kod.
+                </p>
+                <button onclick="currentUser ? showSection('build') : openAuthModal('signup')" class="btn-primary">
+                    <i class="ph-anchor"></i> Börja skeppa
+                </button>
+            </div>
+        </section>
+
+        <!-- SECTION: PROFILE (Mina Sidor) -->
+        <section id="section-profile" class="hidden fade-in-section max-w-2xl mx-auto">
+            <div id="profile-content">
+                <!-- Fylls i dynamiskt av loadProfilePage() -->
+                <div class="text-center py-12">
+                    <div class="spinner mx-auto mb-4"></div>
+                    <p class="text-[var(--text-secondary)]">Laddar profil...</p>
                 </div>
             </div>
         </section>
@@ -814,23 +1434,47 @@
                     <div class="space-y-6">
                         <div>
                             <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Projektnamn *</label>
-                            <input type="text" id="project-title" required class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="t.ex. Auto-CRM">
+                            <input type="text" id="project-title" required class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="t.ex. Auto-CRM">
                         </div>
+
+                        <!-- Screenshot upload -->
                         <div>
-                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Länk till projektet *</label>
-                            <input type="url" id="project-url" required class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="https://min-app.vercel.app">
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Screenshot (valfritt)</label>
+                            <div id="screenshot-dropzone" class="border-2 border-dashed border-[var(--chalk-line)] rounded-lg p-6 text-center cursor-pointer hover:border-[var(--cyan)] transition-colors">
+                                <input type="file" id="project-screenshot" accept="image/*" class="hidden">
+                                <div id="screenshot-preview" class="hidden">
+                                    <img id="screenshot-img" class="max-h-32 mx-auto rounded mb-2">
+                                    <button type="button" onclick="clearScreenshot()" class="text-xs text-red-400 hover:text-red-300">Ta bort</button>
+                                </div>
+                                <div id="screenshot-placeholder">
+                                    <i class="ph-image text-3xl text-[var(--text-secondary)] mb-2"></i>
+                                    <p class="text-sm text-[var(--text-secondary)]">Dra hit eller klicka för att ladda upp</p>
+                                    <p class="text-xs text-[var(--text-secondary)] opacity-70 mt-1">Max 5MB, JPG/PNG/WebP</p>
+                                </div>
+                            </div>
                         </div>
+
                         <div>
-                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Repo-länk (valfritt)</label>
-                            <input type="url" id="project-repo" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="https://github.com/...">
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Demo-länk *</label>
+                            <input type="text" id="project-url" required class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="min-app.vercel.app">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Repo (valfritt)</label>
+                                <input type="text" id="project-repo" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="github.com/user/repo">
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Video (valfritt)</label>
+                                <input type="text" id="project-video" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="youtube.com/watch?v=...">
+                            </div>
                         </div>
                         <div>
                             <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Beskrivning</label>
-                            <textarea rows="3" id="project-description" class="w-full bg-[var(--bg-color)] border-2 border-[var(--chalk-line)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="Vilket problem löser den? Vilken AI-stack använde du?"></textarea>
+                            <textarea rows="3" id="project-description" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors" placeholder="Vilket problem löser den? Vilken AI-stack använde du?"></textarea>
                         </div>
                         <div>
                             <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Taggar</label>
-                            <div class="flex flex-wrap gap-2" id="tags-container">
+                            <div class="flex flex-wrap gap-2 mb-3" id="tags-container">
                                 <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
                                     <input type="checkbox" name="tags" value="AI" class="sr-only"> AI
                                 </label>
@@ -846,7 +1490,37 @@
                                 <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
                                     <input type="checkbox" name="tags" value="Spel" class="sr-only"> Spel
                                 </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Claude" class="sr-only"> Claude
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="ChatGPT" class="sr-only"> ChatGPT
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Gemini" class="sr-only"> Gemini
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Cursor" class="sr-only"> Cursor
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Lovable" class="sr-only"> Lovable
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Bolt" class="sr-only"> Bolt
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="Windsurf" class="sr-only"> Windsurf
+                                </label>
+                                <label class="badge-pill cursor-pointer hover:border-[var(--cyan)] has-[:checked]:badge-cyan">
+                                    <input type="checkbox" name="tags" value="v0" class="sr-only"> v0
+                                </label>
                             </div>
+                            <!-- Custom tags -->
+                            <div class="flex gap-2 mb-2">
+                                <input type="text" id="custom-tag-input" placeholder="Egen tagg..." class="flex-1 text-sm py-1.5 bg-[var(--input-bg)] border border-[var(--input-border)] rounded px-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none transition-colors">
+                                <button type="button" onclick="addCustomTag()" class="btn-ghost px-3 py-1.5 text-sm">+</button>
+                            </div>
+                            <div id="custom-tags-container" class="flex flex-wrap gap-2"></div>
                         </div>
 
                         <div class="pt-4">
@@ -860,36 +1534,348 @@
             </div>
         </section>
 
+        <!-- SECTION: ROADMAP -->
+        <section id="section-roadmap" class="hidden fade-in-section max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-4xl text-[var(--text-primary)] mb-4">Roadmap <span class="sparkle inline mint">✧</span></h2>
+                <p class="text-[var(--text-secondary)]">Rösta på features du vill se, eller föreslå egna idéer!</p>
+            </div>
+
+            <!-- Tabs: Roadmap / Suggestions -->
+            <div class="flex justify-center gap-2 mb-8">
+                <button id="roadmap-tab-items" onclick="setRoadmapTab('items')" class="px-6 py-2 rounded-full text-sm font-medium transition-all leaderboard-toggle-active">
+                    <i class="ph-map-trifold"></i> Roadmap
+                </button>
+                <button id="roadmap-tab-suggestions" onclick="setRoadmapTab('suggestions')" class="px-6 py-2 rounded-full text-sm font-medium transition-all leaderboard-toggle-inactive">
+                    <i class="ph-lightbulb"></i> Förslag
+                </button>
+            </div>
+
+            <!-- Roadmap Items -->
+            <div id="roadmap-items-container" class="space-y-4">
+                <div class="text-center py-8">
+                    <div class="spinner mx-auto mb-4"></div>
+                    <p class="text-[var(--text-secondary)]">Laddar roadmap...</p>
+                </div>
+            </div>
+
+            <!-- Suggestions Container (hidden by default) -->
+            <div id="roadmap-suggestions-container" class="hidden">
+                <!-- Add Suggestion Button -->
+                <div class="mb-6 text-right">
+                    <button onclick="openSuggestionModal()" class="btn-primary flex items-center gap-2 ml-auto">
+                        <i class="ph-plus"></i> Nytt förslag
+                    </button>
+                </div>
+                <div id="suggestions-list" class="space-y-4">
+                    <div class="text-center py-8">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-[var(--text-secondary)]">Laddar förslag...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Suggestion Modal -->
+        <div id="suggestion-modal" class="modal-overlay" onclick="if(event.target === this) closeSuggestionModal()">
+            <div class="modal-content glass-panel p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-xl font-bold text-[var(--text-primary)]">Föreslå en feature</h3>
+                    <button onclick="closeSuggestionModal()" class="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                        <i class="ph-x text-xl"></i>
+                    </button>
+                </div>
+                <form id="suggestion-form" onsubmit="handleSuggestion(event)">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Titel *</label>
+                            <input type="text" id="suggestion-title" required class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="t.ex. Lägg till team battles">
+                        </div>
+                        <div>
+                            <label class="block text-xs uppercase tracking-widest text-[var(--text-secondary)] mb-2">Beskrivning</label>
+                            <textarea rows="3" id="suggestion-description" class="w-full bg-[var(--input-bg)] border border-[var(--input-border)] rounded p-3 text-[var(--text-primary)] focus:border-[var(--cyan)] focus:outline-none" placeholder="Beskriv din idé..."></textarea>
+                        </div>
+                        <button type="submit" id="suggestion-submit" class="btn-primary w-full py-3 flex items-center justify-center gap-2">
+                            <span id="suggestion-btn-text"><i class="ph-paper-plane-right"></i> Skicka förslag</span>
+                            <span id="suggestion-spinner" class="spinner hidden"></span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
     </main>
 
-    <footer class="border-t border-[var(--chalk-line)] bg-[var(--glass-bg)] py-8 text-center text-xs text-[var(--text-secondary)]">
-        <p class="mb-2">En del av NordSym Ecosystem.</p>
-        <p>© 2026 NordSym AB. Byggt för byggare.</p>
+    <footer class="border-t border-[var(--chalk-line)] bg-[var(--glass-bg)] py-10 text-center text-xs text-[var(--text-secondary)]">
+        <a href="https://nordsym.com" target="_blank" rel="noopener" class="inline-block mb-4 opacity-60 hover:opacity-100 transition-opacity">
+            <img src="https://raw.githubusercontent.com/GusHem/Logga-utan-text/refs/heads/main/Final%20logo%20no%20text.svg" alt="NordSym" class="w-6 h-6">
+        </a>
+
+        <p class="mb-3 text-[var(--text-secondary)]">
+            Fler verktyg:
+            <a href="https://genprd.se" target="_blank" class="hover:text-[var(--cyan)] transition-colors">GenPRD</a>
+            <span class="opacity-30 mx-1">·</span>
+            <a href="https://flowvault.se" target="_blank" class="hover:text-[var(--cyan)] transition-colors">FlowVault</a>
+        </p>
+
+        <div class="flex justify-center gap-4 mb-4">
+            <a href="https://x.com/NordSym" target="_blank" rel="noopener" class="text-lg hover:text-[var(--cyan)] transition-colors" title="X / Twitter">
+                <i class="ph ph-twitter-logo"></i>
+            </a>
+            <a href="https://www.linkedin.com/company/nordsym-ab/" target="_blank" rel="noopener" class="text-lg hover:text-[var(--cyan)] transition-colors" title="LinkedIn">
+                <i class="ph ph-linkedin-logo"></i>
+            </a>
+        </div>
+
+        <p>© 2026 NordSym AB <span class="opacity-30 mx-1">·</span> Byggt för byggare <i class="ph-fill ph-heart" style="color: #9370DB;"></i></p>
     </footer>
 
     <script>
         // =============================================
+        // GLOBAL FUNCTIONS (must be defined first for onclick)
+        // =============================================
+        window.showSection = function(sectionId) {
+            document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById('section-' + sectionId);
+            if(target) {
+                target.classList.remove('hidden');
+                target.style.opacity = 0;
+                setTimeout(function() { target.style.opacity = 1; }, 50);
+                target.style.transition = 'opacity 0.4s ease';
+            }
+            document.querySelectorAll('.nav-link').forEach(function(btn) {
+                if(btn.dataset.target === sectionId) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+            window.scrollTo(0, 0);
+
+            // Load dynamic content for certain sections
+            if (sectionId === 'profile' && typeof loadProfilePage === 'function') {
+                loadProfilePage();
+            }
+            if (sectionId === 'leaderboard' && typeof loadLeaderboard === 'function') {
+                loadLeaderboard();
+            }
+        };
+
+        // =============================================
+        // USER MENU (click to toggle)
+        // =============================================
+        function toggleUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.toggle('open');
+        }
+
+        function closeUserMenu() {
+            const menu = document.getElementById('user-menu');
+            menu.classList.remove('open');
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('user-menu');
+            if (menu && !menu.contains(e.target)) {
+                menu.classList.remove('open');
+            }
+        });
+
+        // Init user menu click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('user-menu-btn');
+            if (btn) {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUserMenu();
+                });
+            }
+        });
+
+        // =============================================
         // SUPABASE CONFIG
         // =============================================
         const SUPABASE_URL = 'https://qjouribmhkkhqdsieprs.supabase.co';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqb3VyaWJtaGtraHFkc2llcHJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY5NzI4NjcsImV4cCI6MjA1MjU0ODg2N30.UBSBWhsFeqVDFByq13yXNw_NkJGtR_d';
+        // NOTE: Get anon key from Supabase Dashboard > Settings > API
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqb3VyaWJtaGtraHFkc2llcHJzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg0OTE3OTcsImV4cCI6MjA4NDA2Nzc5N30.GK2bZyl1Ja5T3AHnj7jQnt3UI7B-v70N7onfoxYPm2E';
 
-        let supabase = null;
+        let db = null;
+        let dbValid = false;
+
+        async function testSupabaseConnection() {
+            if (!db) return false;
+            try {
+                const { error } = await db.from('profiles').select('id').limit(1);
+                if (error && error.message.includes('Invalid API key')) {
+                    console.error('⚠️ Invalid Supabase API key. Get correct key from: https://supabase.com/dashboard/project/qjouribmhkkhqdsieprs/settings/api');
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                console.error('Supabase connection test failed:', e);
+                return false;
+            }
+        }
+
         try {
-            if (window.supabase) {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-                console.log('Supabase connected');
+            if (window.supabase && window.supabase.createClient) {
+                db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                console.log('Supabase client created');
             } else {
-                console.warn('Supabase SDK not loaded');
+                console.warn('Supabase SDK not loaded - running in demo mode');
             }
         } catch (e) {
             console.error('Supabase init failed:', e);
+            db = null;
         }
 
         // State
         let currentUser = null;
         let currentProfile = null;
         let isLoginMode = true;
+        window.customTags = [];
+        window.selectedTags = new Set();
+        window.hasVotedThisMonth = false;
+        window.votedSubmissionId = null;
+
+        // =============================================
+        // VOTING SYSTEM
+        // =============================================
+
+        function getCurrentMonth() {
+            const now = new Date();
+            return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+
+        async function checkUserVoteStatus() {
+            if (!currentUser || !db) return;
+            const month = getCurrentMonth();
+            const { data } = await db
+                .from('votes')
+                .select('submission_id')
+                .eq('voter_id', currentUser.id)
+                .eq('month', month)
+                .limit(1);
+
+            if (data && data.length > 0) {
+                window.hasVotedThisMonth = true;
+                window.votedSubmissionId = data[0].submission_id;
+            } else {
+                window.hasVotedThisMonth = false;
+                window.votedSubmissionId = null;
+            }
+        }
+
+        async function voteForSubmission(submissionId, submissionOwnerId, event) {
+            event.stopPropagation(); // Förhindra att modal öppnas
+
+            if (!currentUser) {
+                showToast('Logga in för att rösta', 'error');
+                openAuthModal('login');
+                return;
+            }
+
+            if (currentUser.id === submissionOwnerId) {
+                showToast('Du kan inte rösta på ditt eget projekt', 'error');
+                return;
+            }
+
+            if (window.hasVotedThisMonth) {
+                showToast('Du har redan röstat denna månad', 'error');
+                return;
+            }
+
+            const month = getCurrentMonth();
+
+            try {
+                const { error } = await db
+                    .from('votes')
+                    .insert({
+                        voter_id: currentUser.id,
+                        submission_id: submissionId,
+                        month: month
+                    });
+
+                if (error) throw error;
+
+                window.hasVotedThisMonth = true;
+                window.votedSubmissionId = submissionId;
+                showToast('Röst registrerad! +50p till skaparen', 'success');
+
+                // Uppdatera UI
+                loadRecentSubmissions();
+
+            } catch (err) {
+                console.error('Vote error:', err);
+                if (err.message?.includes('unique')) {
+                    showToast('Du har redan röstat denna månad', 'error');
+                } else {
+                    showToast('Kunde inte rösta: ' + err.message, 'error');
+                }
+            }
+        }
+
+        function getVoteButton(submission) {
+            if (!currentUser) {
+                return `<button onclick="voteForSubmission('${submission.id}', '${submission.user_id}', event)" class="vote-btn text-[var(--text-secondary)] hover:text-[var(--cyan)] transition-colors" title="Logga in för att rösta">
+                    <i class="ph-anchor text-lg"></i>
+                </button>`;
+            }
+
+            const isOwnProject = currentUser.id === submission.user_id;
+            const isVotedProject = window.votedSubmissionId === submission.id;
+
+            if (isOwnProject) {
+                return `<span class="text-[var(--text-secondary)] opacity-50" title="Kan inte rösta på eget projekt">
+                    <i class="ph-anchor text-lg"></i>
+                </span>`;
+            }
+
+            if (isVotedProject) {
+                return `<span class="text-[var(--cyan)]" title="Du röstade på detta projekt">
+                    <i class="ph-anchor-fill text-lg"></i> ✓
+                </span>`;
+            }
+
+            if (window.hasVotedThisMonth) {
+                return `<span class="text-[var(--text-secondary)] opacity-50" title="Du har redan röstat denna månad">
+                    <i class="ph-anchor text-lg"></i>
+                </span>`;
+            }
+
+            return `<button onclick="voteForSubmission('${submission.id}', '${submission.user_id}', event)" class="vote-btn text-[var(--text-secondary)] hover:text-[var(--cyan)] transition-colors" title="Rösta på detta projekt">
+                <i class="ph-anchor text-lg"></i>
+            </button>`;
+        }
+
+        // =============================================
+        // CUSTOM TAGS
+        // =============================================
+
+        function addCustomTag() {
+            const input = document.getElementById('custom-tag-input');
+            const tag = input.value.trim();
+            if (!tag || window.customTags.includes(tag)) {
+                input.value = '';
+                return;
+            }
+            window.customTags.push(tag);
+            renderCustomTags();
+            input.value = '';
+        }
+
+        function removeCustomTag(tag) {
+            window.customTags = window.customTags.filter(t => t !== tag);
+            renderCustomTags();
+        }
+
+        function renderCustomTags() {
+            const container = document.getElementById('custom-tags-container');
+            container.innerHTML = window.customTags.map(tag => `
+                <span class="badge-pill badge-cyan flex items-center gap-1">
+                    ${tag}
+                    <button type="button" onclick="removeCustomTag('${tag}')" class="hover:text-white">&times;</button>
+                </span>
+            `).join('');
+        }
 
         // =============================================
         // AUTH FUNCTIONS
@@ -910,6 +1896,65 @@
             document.getElementById('auth-form').reset();
         }
 
+        // Edit Profile Modal functions
+        async function openEditProfileModal() {
+            if (!currentUser) return;
+
+            // Fetch current profile data
+            const { data: profile } = await db
+                .from('profiles')
+                .select('display_name, x_handle, github_handle, linkedin_url')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (profile) {
+                document.getElementById('edit-display-name').value = profile.display_name || '';
+                document.getElementById('edit-x-handle').value = profile.x_handle || '';
+                document.getElementById('edit-github-handle').value = profile.github_handle || '';
+                document.getElementById('edit-linkedin-url').value = profile.linkedin_url || '';
+            }
+
+            document.getElementById('edit-profile-modal').classList.remove('hidden');
+            document.getElementById('edit-profile-modal').classList.add('active');
+        }
+
+        function closeEditProfileModal() {
+            document.getElementById('edit-profile-modal').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('edit-profile-modal').classList.add('hidden');
+            }, 300);
+        }
+
+        async function handleEditProfile(e) {
+            e.preventDefault();
+            if (!currentUser) return;
+
+            const displayName = document.getElementById('edit-display-name').value.trim();
+            const xHandle = document.getElementById('edit-x-handle').value.trim().replace('@', '');
+            const githubHandle = document.getElementById('edit-github-handle').value.trim().replace('@', '');
+            const linkedinUrl = document.getElementById('edit-linkedin-url').value.trim();
+
+            try {
+                const { error } = await db
+                    .from('profiles')
+                    .update({
+                        display_name: displayName || null,
+                        x_handle: xHandle || null,
+                        github_handle: githubHandle || null,
+                        linkedin_url: linkedinUrl || null
+                    })
+                    .eq('id', currentUser.id);
+
+                if (error) throw error;
+
+                showToast('Profil uppdaterad!', 'success');
+                closeEditProfileModal();
+                loadProfilePage(); // Refresh profile
+            } catch (err) {
+                showToast('Kunde inte spara: ' + err.message, 'error');
+            }
+        }
+
         function toggleAuthMode() {
             openAuthModal(isLoginMode ? 'signup' : 'login');
         }
@@ -926,18 +1971,18 @@
             document.getElementById('auth-submit').disabled = true;
 
             try {
-                if (!supabase) {
+                if (!db) {
                     throw new Error('Databasen är inte ansluten. Ladda om sidan.');
                 }
                 if (isLoginMode) {
-                    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+                    const { data, error } = await db.auth.signInWithPassword({ email, password });
                     if (error) throw error;
                     showToast('Inloggad! Välkommen tillbaka.', 'success');
                 } else {
                     if (!username || username.length < 3) {
                         throw new Error('Användarnamn måste vara minst 3 tecken');
                     }
-                    const { data, error } = await supabase.auth.signUp({
+                    const { data, error } = await db.auth.signUp({
                         email,
                         password,
                         options: {
@@ -958,7 +2003,7 @@
         }
 
         async function handleLogout() {
-            await supabase.auth.signOut();
+            await db.auth.signOut();
             currentUser = null;
             currentProfile = null;
             updateAuthUI();
@@ -969,12 +2014,15 @@
         function updateAuthUI() {
             const authButtons = document.getElementById('auth-buttons');
             const userMenu = document.getElementById('user-menu');
+            const headerSkeppaCta = document.getElementById('header-skeppa-cta');
             const loginRequired = document.getElementById('login-required');
             const submitForm = document.getElementById('submit-form');
 
             if (currentUser && currentProfile) {
                 authButtons.classList.add('hidden');
                 userMenu.classList.remove('hidden');
+                headerSkeppaCta.classList.remove('hidden');
+                headerSkeppaCta.classList.add('flex');
                 loginRequired.classList.add('hidden');
                 submitForm.classList.remove('hidden');
 
@@ -985,9 +2033,263 @@
             } else {
                 authButtons.classList.remove('hidden');
                 userMenu.classList.add('hidden');
+                headerSkeppaCta.classList.add('hidden');
+                headerSkeppaCta.classList.remove('flex');
                 loginRequired.classList.remove('hidden');
                 submitForm.classList.add('hidden');
             }
+        }
+
+        // =============================================
+        // ONBOARDING FUNCTIONS
+        // =============================================
+
+        function showOnboardingModal() {
+            document.getElementById('onboarding-modal').classList.add('active');
+        }
+
+        function closeOnboardingModal() {
+            document.getElementById('onboarding-modal').classList.remove('active');
+        }
+
+        async function handleOnboarding(e) {
+            e.preventDefault();
+            const username = document.getElementById('onboarding-username').value.trim().toLowerCase();
+            const displayName = document.getElementById('onboarding-displayname').value.trim();
+
+            document.getElementById('onboarding-btn-text').classList.add('hidden');
+            document.getElementById('onboarding-spinner').classList.remove('hidden');
+            document.getElementById('onboarding-submit').disabled = true;
+
+            try {
+                // Check if username is taken
+                const { data: existing } = await db.from('profiles').select('id').eq('username', username).single();
+                if (existing) {
+                    throw new Error('Detta @handle är redan taget');
+                }
+
+                // Update profile
+                const { error } = await db.from('profiles').update({
+                    username: username,
+                    display_name: displayName || null
+                }).eq('id', currentUser.id);
+
+                if (error) throw error;
+
+                // Refresh profile
+                const { data: profile } = await db.from('profiles').select('*').eq('id', currentUser.id).single();
+                currentProfile = profile;
+
+                closeOnboardingModal();
+                updateAuthUI();
+                showToast(`Välkommen @${username}!`, 'success');
+
+            } catch (err) {
+                document.getElementById('username-status').textContent = err.message;
+                document.getElementById('username-status').classList.add('text-red-400');
+            } finally {
+                document.getElementById('onboarding-btn-text').classList.remove('hidden');
+                document.getElementById('onboarding-spinner').classList.add('hidden');
+                document.getElementById('onboarding-submit').disabled = false;
+            }
+        }
+
+        // Check username availability in real-time
+        let usernameCheckTimeout;
+        function initUsernameCheck() {
+            const input = document.getElementById('onboarding-username');
+            if (!input) return;
+
+            input.addEventListener('input', () => {
+                clearTimeout(usernameCheckTimeout);
+                const status = document.getElementById('username-status');
+                const username = input.value.trim().toLowerCase();
+
+                if (username.length < 3) {
+                    status.textContent = '3-20 tecken, bokstäver, siffror och _';
+                    status.className = 'text-xs mt-1 text-[var(--text-secondary)]';
+                    return;
+                }
+
+                status.textContent = 'Kollar...';
+                usernameCheckTimeout = setTimeout(async () => {
+                    const { data } = await db.from('profiles').select('id').eq('username', username).single();
+                    if (data) {
+                        status.textContent = '@' + username + ' är redan taget';
+                        status.className = 'text-xs mt-1 text-red-400';
+                    } else {
+                        status.textContent = '@' + username + ' är ledigt!';
+                        status.className = 'text-xs mt-1 text-green-400';
+                    }
+                }, 500);
+            });
+        }
+
+        // =============================================
+        // PROJECT MODAL FUNCTIONS
+        // =============================================
+
+        let currentProjectData = null;
+
+        function openProjectModal(project) {
+            currentProjectData = project;
+            const modal = document.getElementById('project-modal');
+
+            // Image - prioritize: screenshot_url > screenshot_html > placeholder
+            const imgContainer = document.getElementById('project-modal-image');
+            const closeBtn = `<button onclick="closeProjectModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/50 text-white hover:bg-black/70 flex items-center justify-center transition-colors z-10"><i class="ph-x text-lg"></i></button>`;
+
+            if (project.screenshot_url) {
+                imgContainer.innerHTML = `<img src="${project.screenshot_url}" class="w-full h-full object-cover">${closeBtn}`;
+            } else if (project.screenshot_html) {
+                imgContainer.innerHTML = project.screenshot_html + closeBtn;
+            } else {
+                imgContainer.innerHTML = `<i class="ph-image text-5xl text-[var(--text-secondary)] opacity-30"></i>${closeBtn}`;
+            }
+
+            // Text
+            document.getElementById('project-modal-title').textContent = project.title;
+            document.getElementById('project-modal-description').textContent = project.description || 'Ingen beskrivning.';
+
+            // Tags
+            const tagsContainer = document.getElementById('project-modal-tags');
+            tagsContainer.innerHTML = (project.tags || []).map(t => `<span class="badge-pill">${t}</span>`).join('');
+
+            // Links
+            const demoBtn = document.getElementById('project-modal-demo');
+            const repoBtn = document.getElementById('project-modal-repo');
+            const videoBtn = document.getElementById('project-modal-video');
+
+            if (project.url || project.demo_url) {
+                demoBtn.href = project.url || project.demo_url;
+                demoBtn.classList.remove('hidden');
+            } else {
+                demoBtn.classList.add('hidden');
+            }
+
+            if (project.repo_url) {
+                repoBtn.href = project.repo_url;
+                repoBtn.classList.remove('hidden');
+            } else {
+                repoBtn.classList.add('hidden');
+            }
+
+            if (project.video_url) {
+                videoBtn.href = project.video_url;
+                videoBtn.classList.remove('hidden');
+            } else {
+                videoBtn.classList.add('hidden');
+            }
+
+            // User
+            const initial = (project.username || 'U')[0].toUpperCase();
+            document.getElementById('project-modal-avatar').textContent = initial;
+            document.getElementById('project-modal-username').textContent = '@' + (project.username || 'anonym');
+
+            // Points badge
+            const pointsBadge = document.getElementById('project-modal-points-badge');
+            if (pointsBadge) {
+                pointsBadge.textContent = '+' + (project.points_earned || 10) + 'p';
+            }
+
+            modal.classList.add('active');
+        }
+
+        function closeProjectModal() {
+            document.getElementById('project-modal').classList.remove('active');
+            currentProjectData = null;
+        }
+
+        // =============================================
+        // SCREENSHOT UPLOAD FUNCTIONS
+        // =============================================
+
+        let selectedScreenshot = null;
+
+        function initScreenshotUpload() {
+            const dropzone = document.getElementById('screenshot-dropzone');
+            const input = document.getElementById('project-screenshot');
+            if (!dropzone || !input) return;
+
+            dropzone.addEventListener('click', () => input.click());
+
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('border-[var(--cyan)]');
+            });
+
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('border-[var(--cyan)]');
+            });
+
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('border-[var(--cyan)]');
+                if (e.dataTransfer.files.length) {
+                    handleScreenshotFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            input.addEventListener('change', () => {
+                if (input.files.length) {
+                    handleScreenshotFile(input.files[0]);
+                }
+            });
+        }
+
+        function handleScreenshotFile(file) {
+            if (!file.type.startsWith('image/')) {
+                showToast('Endast bilder är tillåtna', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('Max 5MB', 'error');
+                return;
+            }
+
+            selectedScreenshot = file;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('screenshot-img').src = e.target.result;
+                document.getElementById('screenshot-preview').classList.remove('hidden');
+                document.getElementById('screenshot-placeholder').classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearScreenshot() {
+            selectedScreenshot = null;
+            document.getElementById('project-screenshot').value = '';
+            document.getElementById('screenshot-preview').classList.add('hidden');
+            document.getElementById('screenshot-placeholder').classList.remove('hidden');
+        }
+
+        async function uploadScreenshot(userId, submissionId) {
+            if (!selectedScreenshot) return null;
+
+            const fileExt = selectedScreenshot.name.split('.').pop();
+            const filePath = `${userId}/${submissionId}.${fileExt}`;
+
+            // Upload with fetch instead of SDK
+            const uploadRes = await fetch(`https://qjouribmhkkhqdsieprs.supabase.co/storage/v1/object/screenshots/${filePath}`, {
+                method: 'POST',
+                headers: {
+                    'apikey': SUPABASE_KEY,
+                    'Authorization': 'Bearer ' + SUPABASE_KEY,
+                    'Content-Type': selectedScreenshot.type
+                },
+                body: selectedScreenshot
+            });
+
+            if (!uploadRes.ok) {
+                const err = await uploadRes.json();
+                console.error('Upload error:', err);
+                throw new Error(err.message || 'Upload failed');
+            }
+
+            // Return public URL
+            return `https://qjouribmhkkhqdsieprs.supabase.co/storage/v1/object/public/screenshots/${filePath}`;
         }
 
         // =============================================
@@ -1002,15 +2304,34 @@
             }
 
             const title = document.getElementById('project-title').value;
-            const url = document.getElementById('project-url').value;
-            const repoUrl = document.getElementById('project-repo').value;
             const description = document.getElementById('project-description').value;
-            const tagInputs = document.querySelectorAll('input[name="tags"]:checked');
-            const tags = Array.from(tagInputs).map(el => el.value);
+
+            // Auto-add https:// if missing
+            const addHttps = (val) => {
+                if (!val) return '';
+                val = val.trim();
+                if (val && !val.startsWith('http://') && !val.startsWith('https://')) {
+                    return 'https://' + val;
+                }
+                return val;
+            };
+
+            const url = addHttps(document.getElementById('project-url').value);
+            const repoUrl = addHttps(document.getElementById('project-repo').value);
+            const videoUrl = addHttps(document.getElementById('project-video')?.value);
+
+            // Get selected tags + custom tags
+            const selectedTags = Array.from(window.selectedTags || []);
+            const customTags = window.customTags || [];
+            const tags = [...selectedTags, ...customTags];
+            console.log('Selected tags:', selectedTags, 'Custom tags:', customTags, 'Final:', tags);
 
             // Get current batch month
             const now = new Date();
             const batchMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // Debug payload
+            console.log('Submitting:', { title, url, repoUrl, videoUrl, description, tags, batchMonth, user_id: currentUser.id });
 
             // Show spinner
             document.getElementById('submit-text').classList.add('hidden');
@@ -1018,39 +2339,98 @@
             document.getElementById('submit-btn').disabled = true;
 
             try {
-                // Calculate points
-                const { data: points } = await supabase.rpc('calculate_submission_points', {
-                    p_user_id: currentUser.id,
-                    p_batch_month: batchMonth
-                });
+                // Default points for submission
+                const points = 10;
 
                 // Insert submission
-                const { data, error } = await supabase
-                    .from('submissions')
-                    .insert({
-                        user_id: currentUser.id,
-                        title,
-                        url,
-                        repo_url: repoUrl || null,
-                        description,
-                        tags,
-                        batch_month: batchMonth,
-                        points_earned: points || 10
-                    })
-                    .select()
-                    .single();
+                const payload = {
+                    user_id: currentUser.id,
+                    title,
+                    url: url,
+                    demo_url: url,
+                    repo_url: repoUrl || null,
+                    video_url: videoUrl || null,
+                    description,
+                    tags,
+                    batch_month: batchMonth,
+                    points_earned: points
+                };
+                console.log('Insert payload:', payload);
+                console.log('Starting INSERT via fetch...');
 
-                if (error) throw error;
+                // Use fetch directly instead of Supabase SDK
+                const response = await fetch('https://qjouribmhkkhqdsieprs.supabase.co/rest/v1/submissions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': 'Bearer ' + SUPABASE_KEY,
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-                showToast(`Skeppat! +${points || 10} poäng`, 'success');
+                const result = await response.json();
+                console.log('Fetch response:', response.status, result);
+
+                if (!response.ok) {
+                    throw new Error(result.message || 'Insert failed');
+                }
+
+                const data = Array.isArray(result) ? result[0] : result;
+                const error = null;
+
+                console.log('INSERT completed, data:', data);
+
+                if (error) {
+                    console.error('Supabase INSERT error:', error);
+                    throw error;
+                }
+                console.log('Insert success:', data);
+
+                // Upload screenshot if selected
+                if (selectedScreenshot && data) {
+                    try {
+                        console.log('Uploading screenshot...');
+                        const screenshotUrl = await uploadScreenshot(currentUser.id, data.id);
+                        console.log('Screenshot uploaded:', screenshotUrl);
+                        if (screenshotUrl) {
+                            // Update submission with screenshot URL
+                            await fetch(`https://qjouribmhkkhqdsieprs.supabase.co/rest/v1/submissions?id=eq.${data.id}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'apikey': SUPABASE_KEY,
+                                    'Authorization': 'Bearer ' + SUPABASE_KEY
+                                },
+                                body: JSON.stringify({ screenshot_url: screenshotUrl })
+                            });
+                            console.log('Screenshot URL saved to submission');
+                        }
+                    } catch (uploadErr) {
+                        console.warn('Screenshot upload failed:', uploadErr);
+                    }
+                }
+
+                console.log('Showing success toast and resetting...');
+                showToast(`Skeppat! +${points} poäng`, 'success');
                 document.getElementById('submit-form').reset();
+                clearScreenshot();
+                window.customTags = [];
+                window.selectedTags = new Set();
+                renderCustomTags();
+                // Reset tag styling
+                document.querySelectorAll('#tags-container .badge-pill').forEach(el => el.classList.remove('badge-cyan'));
 
-                // Reload data
-                await loadDashboardData();
+                console.log('Going back to start...');
                 showSection('start');
 
+                // Reload page to refresh data (SDK has issues)
+                setTimeout(() => location.reload(), 3000);
+
             } catch (err) {
-                showToast('Kunde inte skeppa: ' + err.message, 'error');
+                console.error('Submit error:', err);
+                showToast('Kunde inte skeppa: ' + (err.message || JSON.stringify(err)), 'error');
             } finally {
                 document.getElementById('submit-text').classList.remove('hidden');
                 document.getElementById('submit-spinner').classList.add('hidden');
@@ -1066,29 +2446,33 @@
             try {
                 // Load stats from Supabase
                 const [submissionsRes, batchRes, waitlistRes] = await Promise.all([
-                    supabase.from('submissions').select('user_id, points_earned'),
-                    supabase.from('batches').select('*').eq('is_active', true).single(),
-                    supabase.from('waitlist').select('id', { count: 'exact', head: true })
+                    db.from('submissions').select('user_id, points_earned'),
+                    db.from('batches').select('*').eq('is_active', true).single(),
+                    db.from('waitlist').select('id')
                 ]);
 
                 const submissions = submissionsRes.data || [];
+                const waitlist = waitlistRes.data || [];
 
-                // Skeppare = unika användare som har skeppat
+                // Debug: log waitlist result
+                console.log('Waitlist result:', waitlist.length, 'entries', waitlistRes.error ? 'Error: ' + waitlistRes.error.message : 'OK');
+
+                // Skeppare = unika användare som har skeppat minst 1 gång
                 const uniqueShippers = new Set(submissions.map(s => s.user_id)).size;
                 const totalSubmissions = submissions.length;
 
-                // Landkrabbor = folk på waitlist (inte skeppat än)
-                const landcrabs = waitlistRes.count || 0;
+                // Landkrabbor = waitlist (anmält intresse, ej skeppat än)
+                const landcrabs = waitlist.length;
 
-                // Månadens batch
+                // Månadens batch - capitalize first letter only (Jan, Feb, etc)
                 const batchMonth = batchRes.data?.month ?
-                    new Date(batchRes.data.month + '-01').toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '').toUpperCase() :
+                    new Date(batchRes.data.month + '-01').toLocaleDateString('sv-SE', { month: 'short' }).replace('.', '').replace(/^./, c => c.toUpperCase()) :
                     '—';
 
                 // Update stats with IDs
                 document.getElementById('stat-shippers').textContent = uniqueShippers;
                 document.getElementById('stat-landcrabs').textContent = landcrabs;
-                document.getElementById('stat-batch').textContent = batchMonth;
+                document.getElementById('stat-batch-text').textContent = batchMonth;
                 document.getElementById('stat-ships').textContent = totalSubmissions;
 
                 // Load recent submissions
@@ -1103,25 +2487,42 @@
         }
 
         async function loadRecentSubmissions() {
-            const { data: submissions, error } = await supabase
+            const container = document.getElementById('recent-submissions-container');
+            const emptyState = document.getElementById('empty-submissions');
+            if (!container) return;
+
+            const { data: submissions, error } = await db
                 .from('recent_submissions')
                 .select('*')
                 .limit(3);
 
-            if (error || !submissions?.length) return;
+            if (error || !submissions?.length) {
+                // Show empty state
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
 
-            const container = document.querySelector('#section-start .grid.grid-cols-1.md\\:grid-cols-3');
-            if (!container) return;
+            // Hide empty state
+            if (emptyState) emptyState.classList.add('hidden');
 
-            container.innerHTML = submissions.map(s => `
-                <div class="glass-panel submission-card group cursor-pointer" onclick="window.open('${s.url}', '_blank')">
+            // Store submissions for modal
+            window.recentSubmissions = submissions;
+
+            const cards = submissions.map((s, i) => `
+                <div class="glass-panel submission-card group cursor-pointer" onclick="openProjectModal(window.recentSubmissions[${i}])">
                     <div class="card-image">
-                        <i class="ph-rocket-launch text-4xl"></i>
+                        ${s.screenshot_url
+                            ? `<img src="${s.screenshot_url}" class="w-full h-full object-cover">`
+                            : '<i class="ph-rocket-launch text-4xl"></i>'
+                        }
                     </div>
                     <div class="p-5">
-                        <div class="flex justify-between items-start mb-2">
+                        <div class="flex justify-between items-start mb-2 gap-2">
                             <h4 class="text-lg font-bold text-[var(--text-primary)] font-serif">${escapeHtml(s.title)}</h4>
-                            ${s.tags?.includes('AI') ? '<span class="badge-pill badge-cyan">AI</span>' : ''}
+                            <div class="flex flex-wrap gap-1 justify-end">
+                                ${(s.tags || []).slice(0, 3).map(t => `<span class="badge-pill text-[10px] py-0.5 px-2 ${t === 'AI' ? 'badge-cyan' : ''}">${escapeHtml(t)}</span>`).join('')}
+                                ${(s.tags || []).length > 3 ? `<span class="badge-pill text-[10px] py-0.5 px-2">+${s.tags.length - 3}</span>` : ''}
+                            </div>
                         </div>
                         <p class="text-sm text-[var(--text-secondary)] mb-4 line-clamp-2">${escapeHtml(s.description || 'Ingen beskrivning')}</p>
                         <div class="flex justify-between items-center text-xs">
@@ -1129,54 +2530,437 @@
                                 <div class="w-5 h-5 rounded-full bg-gray-700 border border-[var(--chalk-line)] flex items-center justify-center text-white">${(s.username || 'U')[0].toUpperCase()}</div>
                                 @${escapeHtml(s.username || 'anonym')}
                             </div>
-                            <span class="text-[var(--text-secondary)] opacity-70">+${s.points_earned}p</span>
+                            <div class="flex items-center gap-3">
+                                ${getVoteButton(s)}
+                                <span class="text-[var(--text-secondary)] opacity-70">+${s.points_earned || 10}p</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             `).join('');
+
+            container.innerHTML = cards;
+        }
+
+        // Leaderboard mode state
+        window.leaderboardMode = 'monthly';
+
+        function setLeaderboardMode(mode) {
+            window.leaderboardMode = mode;
+
+            // Update button styles
+            const monthlyBtn = document.getElementById('leaderboard-monthly-btn');
+            const alltimeBtn = document.getElementById('leaderboard-alltime-btn');
+
+            if (mode === 'monthly') {
+                monthlyBtn.className = 'leaderboard-toggle-active px-4 py-2 rounded-full text-sm font-medium transition-all';
+                alltimeBtn.className = 'leaderboard-toggle-inactive px-4 py-2 rounded-full text-sm font-medium transition-all';
+            } else {
+                alltimeBtn.className = 'leaderboard-toggle-active px-4 py-2 rounded-full text-sm font-medium transition-all';
+                monthlyBtn.className = 'leaderboard-toggle-inactive px-4 py-2 rounded-full text-sm font-medium transition-all';
+            }
+
+            loadLeaderboard();
         }
 
         async function loadLeaderboard() {
-            const { data: leaders, error } = await supabase
-                .from('leaderboard')
-                .select('*')
-                .order('total_points', { ascending: false })
-                .limit(10);
-
-            if (error || !leaders?.length) return;
-
-            const container = document.querySelector('#section-leaderboard .glass-panel');
+            const container = document.getElementById('leaderboard-container');
+            const emptyState = document.getElementById('leaderboard-empty');
             if (!container) return;
 
-            const header = container.querySelector('.border-b');
-            const rows = leaders.map((user, i) => {
-                const rankColors = ['text-yellow-400', 'text-[var(--text-secondary)]', 'text-orange-700'];
+            const mode = window.leaderboardMode || 'monthly';
+            const currentMonth = getCurrentMonth();
+
+            let leaders = [];
+            let error = null;
+
+            if (mode === 'monthly') {
+                // Fetch from monthly_scores (or fallback to profiles if table doesn't exist yet)
+                const { data, error: monthlyError } = await db
+                    .from('monthly_scores')
+                    .select('user_id, points, submissions_count, votes_received')
+                    .eq('month', currentMonth)
+                    .order('points', { ascending: false })
+                    .limit(10);
+
+                if (monthlyError || !data?.length) {
+                    // Fallback to profiles
+                    const { data: fallback, error: fallbackError } = await db
+                        .from('profiles')
+                        .select('id, username, display_name, avatar_url, total_points')
+                        .gt('total_points', 0)
+                        .order('total_points', { ascending: false })
+                        .limit(10);
+                    leaders = fallback || [];
+                    error = fallbackError;
+                } else {
+                    // Need to get usernames for monthly_scores
+                    const userIds = data.map(ms => ms.user_id);
+                    const { data: profiles } = await db
+                        .from('profiles')
+                        .select('id, username, display_name, avatar_url')
+                        .in('id', userIds);
+
+                    leaders = data.map(ms => {
+                        const profile = profiles?.find(p => p.id === ms.user_id) || {};
+                        return {
+                            id: ms.user_id,
+                            username: profile.username,
+                            display_name: profile.display_name,
+                            avatar_url: profile.avatar_url,
+                            total_points: ms.points,
+                            submissions_count: ms.submissions_count
+                        };
+                    });
+                }
+            } else {
+                // All-time: use total_xp from profiles
+                const { data, error: alltimeError } = await db
+                    .from('profiles')
+                    .select('id, username, display_name, avatar_url, total_xp, total_points')
+                    .gt('total_points', 0)
+                    .order('total_points', { ascending: false })
+                    .limit(10);
+                leaders = (data || []).map(p => ({ ...p, total_points: p.total_xp || p.total_points }));
+                error = alltimeError;
+            }
+
+            if (emptyState) emptyState.classList.add('hidden');
+
+            // If no leaders, show placeholder rows
+            if (error || !leaders?.length) {
+                const rankIcons = [
+                    '<i class="ph-fill ph-medal" style="color:#FFD700"></i>',
+                    '<i class="ph-fill ph-medal" style="color:#C0C0C0"></i>',
+                    '<i class="ph-fill ph-medal" style="color:#CD7F32"></i>'
+                ];
+                const header = container.querySelector('.leaderboard-header');
+                const placeholders = [0, 1, 2].map(i => `
+                    <div class="leaderboard-row p-4 flex items-center opacity-50">
+                        <div class="w-16 text-center text-xl">${rankIcons[i]}</div>
+                        <div class="flex-grow flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-700 border border-dashed border-[var(--chalk-line)] flex items-center justify-center text-xs text-[var(--text-secondary)]">?</div>
+                            <div>
+                                <div class="text-[var(--text-secondary)] italic">Ditt namn här</div>
+                            </div>
+                        </div>
+                        <div class="w-32 text-center text-[var(--text-secondary)]">—</div>
+                        <div class="w-24 text-right font-mono text-[var(--text-secondary)]">—</div>
+                    </div>
+                `).join('');
+                container.innerHTML = (header ? header.outerHTML : '') + placeholders;
+                return;
+            }
+
+            // Fetch badges for all leaders (separate queries)
+            const userIds = leaders.map(l => l.id);
+            const { data: userBadgeLinks } = await db
+                .from('user_badges')
+                .select('user_id, badge_id')
+                .in('user_id', userIds);
+
+            // Get all badge details
+            let allBadges = [];
+            if (userBadgeLinks && userBadgeLinks.length > 0) {
+                const badgeIds = [...new Set(userBadgeLinks.map(ub => ub.badge_id))];
+                const { data: badgeDetails } = await db
+                    .from('badges')
+                    .select('id, slug, name, icon')
+                    .in('id', badgeIds);
+
+                allBadges = userBadgeLinks.map(ub => {
+                    const badge = badgeDetails?.find(b => b.id === ub.badge_id);
+                    return { user_id: ub.user_id, badges: badge };
+                }).filter(ub => ub.badges);
+            }
+
+            // Group badges by user
+            const badgesByUser = {};
+            (allBadges || []).forEach(ub => {
+                if (!badgesByUser[ub.user_id]) badgesByUser[ub.user_id] = [];
+                if (ub.badges) badgesByUser[ub.user_id].push(ub.badges);
+            });
+
+            // Count submissions per user
+            const { data: subCounts } = await db
+                .from('submissions')
+                .select('user_id')
+                .in('user_id', userIds);
+
+            const submissionCounts = {};
+            (subCounts || []).forEach(s => {
+                submissionCounts[s.user_id] = (submissionCounts[s.user_id] || 0) + 1;
+            });
+
+            const header = container.querySelector('.leaderboard-header');
+            const rankIcons = [
+                '<i class="ph-fill ph-medal" style="color:#FFD700"></i>',
+                '<i class="ph-fill ph-medal" style="color:#C0C0C0"></i>',
+                '<i class="ph-fill ph-medal" style="color:#CD7F32"></i>'
+            ];
+
+            // Build real user rows
+            const realRows = leaders.map((user, i) => {
+                const userBadges = badgesByUser[user.id] || [];
+                const subCount = submissionCounts[user.id] || 0;
+
                 return `
                     <div class="leaderboard-row p-4 flex items-center">
-                        <div class="w-16 text-center rank-number ${rankColors[i] || 'text-[var(--text-secondary)]'}">${i + 1}</div>
+                        <div class="w-16 text-center text-xl">${rankIcons[i] || (i + 1)}</div>
                         <div class="flex-grow flex items-center gap-3">
                             <div class="w-8 h-8 rounded-full bg-gray-700 border border-[var(--chalk-line)] text-white flex items-center justify-center text-xs">
                                 ${(user.username || 'U')[0].toUpperCase()}
                             </div>
                             <div>
                                 <div class="text-[var(--text-primary)] font-medium">@${escapeHtml(user.username || 'anonym')}</div>
-                                ${user.badges?.length ? `<div class="text-[10px] text-[var(--text-secondary)] flex gap-1 mt-0.5">
-                                    ${user.badges.slice(0, 2).map(b => `<span class="badge-pill badge-gold text-[8px] py-0 px-1">${b.toUpperCase()}</span>`).join('')}
+                                ${userBadges.length ? `<div class="flex gap-1 mt-0.5 items-center">
+                                    ${userBadges.slice(0, 3).map(b => {
+                                        return `<span title="${escapeHtml(b.name)}">${getBadgeIcon(b.slug, 20)}</span>`;
+                                    }).join('')}
                                 </div>` : ''}
                             </div>
                         </div>
-                        <div class="w-32 text-center text-[var(--text-secondary)]">${user.submission_count || 0}</div>
+                        <div class="w-32 text-center text-[var(--text-secondary)]">${subCount}</div>
                         <div class="w-24 text-right font-mono ${i === 0 ? 'text-[var(--cyan)]' : 'text-[var(--text-primary)]'} font-bold">${user.total_points}</div>
                     </div>
                 `;
-            }).join('');
+            });
 
-            container.innerHTML = header.outerHTML + rows;
+            // Add placeholder rows if less than 3 users
+            const placeholderRows = [];
+            for (let i = leaders.length; i < 3; i++) {
+                placeholderRows.push(`
+                    <div class="leaderboard-row p-4 flex items-center opacity-50">
+                        <div class="w-16 text-center text-xl">${rankIcons[i]}</div>
+                        <div class="flex-grow flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-gray-700 border border-dashed border-[var(--chalk-line)] flex items-center justify-center text-xs text-[var(--text-secondary)]">?</div>
+                            <div>
+                                <div class="text-[var(--text-secondary)] italic">Ditt namn här</div>
+                            </div>
+                        </div>
+                        <div class="w-32 text-center text-[var(--text-secondary)]">—</div>
+                        <div class="w-24 text-right font-mono text-[var(--text-secondary)]">—</div>
+                    </div>
+                `);
+            }
+
+            container.innerHTML = (header ? header.outerHTML : '') + realRows.join('') + placeholderRows.join('');
         }
 
         function showMySubmissions() {
-            // TODO: Show user's submissions modal
-            showToast('Kommer snart!', 'success');
+            showSection('profile');
+        }
+
+        // =============================================
+        // PROFILE PAGE (Mina Sidor)
+        // =============================================
+
+        // Level thresholds matching SQL
+        const LEVEL_THRESHOLDS = [0, 50, 150, 300, 500];
+        const LEVEL_NAMES = ['Landkrabba', 'Matros', 'Styrman', 'Kapten', 'Amiral'];
+
+        function calculateLevel(points) {
+            for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+                if (points >= LEVEL_THRESHOLDS[i]) return i + 1;
+            }
+            return 1;
+        }
+
+        function getXpProgress(points) {
+            const level = calculateLevel(points);
+            const currentThreshold = LEVEL_THRESHOLDS[level - 1] || 0;
+            const nextThreshold = LEVEL_THRESHOLDS[level] || currentThreshold;
+            const xpInLevel = points - currentThreshold;
+            const xpNeeded = nextThreshold - currentThreshold;
+            return { xpInLevel, xpNeeded, percent: xpNeeded > 0 ? Math.min(100, (xpInLevel / xpNeeded) * 100) : 100 };
+        }
+
+        // Badge SVG icons mapping (by slug)
+        const BADGE_SVGS = {
+            'jungfrufard': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Jungfru.svg',
+            'dubbellast': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/dubbel.svg',
+            'hattrick': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/trippel.svg',
+            'kapten': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/kapten%20(1).svg',
+            'ai-arkitekt': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Ai-Arkitekt.svg',
+            'open-source': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Ai-Arkitekt.svg',
+            'early-bird': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/Jungfru.svg',
+            'streak-3': 'https://raw.githubusercontent.com/nordsym/Skeppa/refs/heads/main/kapten%20(1).svg'
+        };
+
+        function getBadgeIcon(slug, size = 24) {
+            const url = BADGE_SVGS[slug];
+            if (url) {
+                return `<div class="badge-icon" style="width: ${size}px; height: ${size}px;"><img src="${url}" alt=""></div>`;
+            }
+            return `<div class="badge-icon" style="width: ${size}px; height: ${size}px;"><i class="ph-medal"></i></div>`;
+        }
+
+        async function loadProfilePage() {
+            const container = document.getElementById('profile-content');
+            if (!container || !currentUser) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i class="ph-user-circle text-6xl text-[var(--text-secondary)] mb-4"></i>
+                        <h3 class="text-xl text-[var(--text-primary)] mb-2">Logga in</h3>
+                        <p class="text-[var(--text-secondary)] mb-6">Du måste vara inloggad för att se din profil.</p>
+                        <button onclick="openAuthModal('login')" class="btn-primary">Logga in</button>
+                    </div>
+                `;
+                return;
+            }
+
+            // Fetch profile data
+            const { data: profile, error: profileError } = await db
+                .from('profiles')
+                .select('*')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (profileError) {
+                container.innerHTML = '<p class="text-center text-red-400">Kunde inte ladda profil.</p>';
+                return;
+            }
+
+            // Fetch user badges (separate queries since FK join may not work)
+            const { data: userBadgeLinks } = await db
+                .from('user_badges')
+                .select('badge_id, earned_at')
+                .eq('user_id', currentUser.id);
+
+            // Get badge details
+            let userBadges = [];
+            if (userBadgeLinks && userBadgeLinks.length > 0) {
+                const badgeIds = userBadgeLinks.map(ub => ub.badge_id);
+                const { data: badgeDetails } = await db
+                    .from('badges')
+                    .select('id, slug, name, description, icon')
+                    .in('id', badgeIds);
+
+                userBadges = userBadgeLinks.map(ub => {
+                    const badge = badgeDetails?.find(b => b.id === ub.badge_id);
+                    return { ...ub, badges: badge };
+                }).filter(ub => ub.badges);
+            }
+
+            // Fetch user submissions
+            const { data: submissions } = await db
+                .from('submissions')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            const totalPoints = profile.total_points || 0;
+            const level = calculateLevel(totalPoints);
+            const levelName = LEVEL_NAMES[level - 1] || 'Landkrabba';
+            const { xpInLevel, xpNeeded, percent } = getXpProgress(totalPoints);
+            const badges = userBadges || [];
+            const subs = submissions || [];
+
+            container.innerHTML = `
+                <!-- Profile Header - Kawaii style -->
+                <div class="profile-card p-8 mb-6">
+                    <div class="flex flex-col sm:flex-row items-center gap-6">
+                        <div class="profile-avatar w-20 h-20 rounded-full bg-gradient-to-br from-[#6B9FFF] to-[#B19CD9] flex items-center justify-center text-3xl font-bold text-white">
+                            ${(profile.username || 'U')[0].toUpperCase()}
+                        </div>
+                        <div class="text-center sm:text-left flex-grow">
+                            <h2 class="text-2xl font-bold text-[var(--text-primary)]">@${escapeHtml(profile.username || 'anonym')}</h2>
+                            ${profile.display_name ? `<p class="text-[var(--text-secondary)]">${escapeHtml(profile.display_name)}</p>` : ''}
+                            <div class="flex gap-3 mt-2 justify-center sm:justify-start">
+                                ${profile.x_handle ? `<a href="https://x.com/${profile.x_handle}" target="_blank" class="text-[var(--text-secondary)] hover:text-[#6B9FFF] transition-colors"><i class="ph ph-twitter-logo"></i></a>` : ''}
+                                ${profile.github_handle ? `<a href="https://github.com/${profile.github_handle}" target="_blank" class="text-[var(--text-secondary)] hover:text-[#6B9FFF] transition-colors"><i class="ph ph-github-logo"></i></a>` : ''}
+                                ${profile.linkedin_url ? `<a href="${profile.linkedin_url}" target="_blank" class="text-[var(--text-secondary)] hover:text-[#6B9FFF] transition-colors"><i class="ph ph-linkedin-logo"></i></a>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-4xl font-bold bg-gradient-to-r from-[#6B9FFF] to-[#B19CD9] bg-clip-text text-transparent">${totalPoints}</div>
+                            <div class="text-xs uppercase tracking-widest text-[var(--text-secondary)]">XP</div>
+                        </div>
+                        <button onclick="openEditProfileModal()" class="p-2 rounded-full hover:bg-[rgba(107,159,255,0.1)] transition-colors text-[var(--text-secondary)] hover:text-[#6B9FFF]" title="Redigera profil">
+                            <i class="ph ph-gear text-xl"></i>
+                        </button>
+                    </div>
+
+                    <!-- Level Progress - Kawaii XP bar -->
+                    <div class="mt-6 pt-6 border-t border-[rgba(147,112,219,0.2)]">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center gap-2">
+                                <span class="text-lg font-bold text-[var(--text-primary)]">Level ${level}</span>
+                                <span class="inspo-tag text-xs">${levelName}</span>
+                            </div>
+                            <span class="text-sm text-[var(--text-secondary)]">${xpInLevel}/${xpNeeded} XP</span>
+                        </div>
+                        <div class="h-3 rounded-full overflow-hidden" style="background: rgba(107,159,255,0.15);">
+                            <div class="xp-bar h-full rounded-full transition-all duration-500" style="width: ${Math.max(2, percent)}%"></div>
+                        </div>
+                        ${level < 5 ? `<p class="text-xs text-[var(--text-secondary)] mt-2">Nästa level: ${LEVEL_NAMES[level]} (${LEVEL_THRESHOLDS[level]}p)</p>` : '<p class="text-xs text-[#B19CD9] mt-2">Max level!</p>'}
+                    </div>
+                </div>
+
+                <!-- Utmärkelser Section -->
+                <div class="glass-panel p-6 mb-6">
+                    <h3 class="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                        <i class="ph-medal"></i> Utmärkelser (${badges.length})
+                    </h3>
+                    ${badges.length > 0 ? `
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            ${badges.map(ub => {
+                                const b = ub.badges;
+                                return `
+                                    <div class="p-4 rounded-lg bg-[var(--cyan-dim)] border border-[var(--cyan)] text-center">
+                                        <div class="mb-2">${getBadgeIcon(b.slug, 48)}</div>
+                                        <div class="text-sm font-bold text-[var(--text-primary)]">${escapeHtml(b.name)}</div>
+                                        <div class="text-xs text-[var(--text-secondary)]">${escapeHtml(b.description || '')}</div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    ` : `
+                        <div class="text-center py-8 text-[var(--text-secondary)]">
+                            <i class="ph-medal text-4xl mb-2 opacity-50"></i>
+                            <p>Inga utmärkelser ännu. Skeppa ditt första projekt!</p>
+                        </div>
+                    `}
+                </div>
+
+                <!-- Submissions Section -->
+                <div class="glass-panel p-6">
+                    <h3 class="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                        <i class="ph-folder"></i> Mina Skeppningar (${subs.length})
+                    </h3>
+                    ${subs.length > 0 ? `
+                        <div class="space-y-3">
+                            ${subs.map(s => `
+                                <div class="p-4 rounded-lg border border-[var(--chalk-line)] hover:border-[var(--cyan)] transition-colors">
+                                    <div class="flex justify-between items-start">
+                                        <div>
+                                            <h4 class="font-bold text-[var(--text-primary)]">${escapeHtml(s.title)}</h4>
+                                            <p class="text-sm text-[var(--text-secondary)]">${escapeHtml(s.description || 'Ingen beskrivning')}</p>
+                                            <div class="flex gap-1 mt-2">
+                                                ${(s.tags || []).slice(0, 3).map(t => `<span class="badge-pill text-[10px] py-0.5 px-2">${escapeHtml(t)}</span>`).join('')}
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <div class="text-[var(--cyan)] font-bold">+${s.points_earned || 10}p</div>
+                                            <div class="text-xs text-[var(--text-secondary)]">${new Date(s.created_at).toLocaleDateString('sv-SE')}</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex gap-3 mt-3 text-xs">
+                                        ${s.url ? `<a href="${escapeHtml(s.url)}" target="_blank" class="text-[var(--cyan)] hover:underline flex items-center gap-1"><i class="ph-link"></i> Demo</a>` : ''}
+                                        ${s.repo_url ? `<a href="${escapeHtml(s.repo_url)}" target="_blank" class="text-[var(--text-secondary)] hover:text-[var(--cyan)] flex items-center gap-1"><i class="ph-git-branch"></i> Repo</a>` : ''}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : `
+                        <div class="text-center py-8 text-[var(--text-secondary)]">
+                            <i class="ph-rocket-launch text-4xl mb-2 opacity-50"></i>
+                            <p>Du har inte skeppat något ännu.</p>
+                            <button onclick="showSection('build')" class="btn-primary mt-4">Skeppa nu!</button>
+                        </div>
+                    `}
+                </div>
+            `;
         }
 
         // =============================================
@@ -1307,28 +3091,9 @@
         }
 
         // =============================================
-        // SPA ROUTING
-        // =============================================
-        function showSection(sectionId) {
-            document.querySelectorAll('section').forEach(el => el.classList.add('hidden'));
-            const target = document.getElementById(`section-${sectionId}`);
-            if(target) {
-                target.classList.remove('hidden');
-                target.style.opacity = 0;
-                setTimeout(() => target.style.opacity = 1, 50);
-                target.style.transition = 'opacity 0.4s ease';
-            }
-            document.querySelectorAll('.nav-link').forEach(btn => {
-                if(btn.dataset.target === sectionId) btn.classList.add('active');
-                else btn.classList.remove('active');
-            });
-            window.scrollTo(0, 0);
-        }
-
-        // =============================================
         // THEME MANAGER
         // =============================================
-        (function initTheme() {
+        function initTheme() {
             const themeToggleBtn = document.getElementById('theme-toggle');
             const body = document.body;
 
@@ -1337,50 +3102,39 @@
                 return;
             }
 
-            // Default = light, load saved preference
+            // Default = LIGHT, only go dark if explicitly saved
             const savedTheme = localStorage.getItem('skeppa_theme');
             if (savedTheme === 'dark') {
                 body.classList.remove('light-theme');
                 themeToggleBtn.innerHTML = '<i class="ph ph-sun"></i>';
             } else {
+                // Ensure light theme is applied (default)
                 body.classList.add('light-theme');
                 themeToggleBtn.innerHTML = '<i class="ph ph-moon"></i>';
+                // Clear any old dark preference if not explicitly set
+                if (!savedTheme) {
+                    localStorage.setItem('skeppa_theme', 'light');
+                }
             }
 
-            themeToggleBtn.onclick = function() {
+            themeToggleBtn.addEventListener('click', function() {
                 body.classList.toggle('light-theme');
                 const isLight = body.classList.contains('light-theme');
                 localStorage.setItem('skeppa_theme', isLight ? 'light' : 'dark');
                 this.innerHTML = isLight ? '<i class="ph ph-moon"></i>' : '<i class="ph ph-sun"></i>';
-                console.log('Theme switched to:', isLight ? 'light' : 'dark');
-            };
-        })();
+            });
+        }
 
         // =============================================
         // FLIP CLOCK COUNTDOWN - Countdown to 1 Feb 00:01
         // =============================================
-        (function initCountdown() {
+        function initCountdown() {
             function updateFlipCard(cardId, value) {
                 const card = document.getElementById(cardId);
                 if (!card) return;
-
                 const numEl = card.querySelector('.number');
                 const formattedValue = value < 10 ? '0' + value : String(value);
-
-                if (numEl.textContent !== formattedValue) {
-                    // Trigger flip animation
-                    card.classList.add('flipping');
-
-                    // Update number at midpoint of animation (300ms = half of 600ms)
-                    setTimeout(() => {
-                        numEl.textContent = formattedValue;
-                    }, 300);
-
-                    // Remove animation class after full animation (600ms + buffer)
-                    setTimeout(() => {
-                        card.classList.remove('flipping');
-                    }, 650);
-                }
+                numEl.textContent = formattedValue;
             }
 
             function updateTimer() {
@@ -1408,71 +3162,631 @@
                 updateFlipCard('flip-secs', s);
             }
 
-            // Run immediately
+            // Run immediately and every second
             updateTimer();
-            // Update every second for smooth minute transitions
             setInterval(updateTimer, 1000);
-        })();
+        }
 
         // =============================================
-        // TAG CHECKBOX STYLING
+        // NAV LINK SETUP
         // =============================================
-        document.querySelectorAll('input[name="tags"]').forEach(input => {
-            input.addEventListener('change', function() {
-                const label = this.closest('label');
-                if (this.checked) {
-                    label.classList.add('badge-cyan');
-                } else {
-                    label.classList.remove('badge-cyan');
-                }
+        function initNavLinks() {
+            document.querySelectorAll('.nav-link').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const target = btn.dataset.target;
+                    if (target) showSection(target);
+                });
             });
+        }
+
+        // =============================================
+        // TAG SELECTION (JS-based, not checkbox)
+        // =============================================
+        function initTagCheckboxes() {
+            document.querySelectorAll('#tags-container .badge-pill').forEach(label => {
+                label.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const input = this.querySelector('input[name="tags"]');
+                    const tagValue = input.value;
+
+                    if (window.selectedTags.has(tagValue)) {
+                        window.selectedTags.delete(tagValue);
+                        this.classList.remove('badge-cyan');
+                        input.checked = false;
+                    } else {
+                        window.selectedTags.add(tagValue);
+                        this.classList.add('badge-cyan');
+                        input.checked = true;
+                    }
+                    console.log('Selected tags:', Array.from(window.selectedTags));
+                });
+            });
+        }
+
+        // =============================================
+        // INITIALIZATION - Wait for DOM to be ready
+        // =============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            initCountdown();
+            initNavLinks();
+            initTagCheckboxes();
+            initScreenshotUpload();
+            initUsernameCheck();
+            initStarfield();
         });
 
-        // =============================================
-        // INITIALIZATION
-        // =============================================
+        // Initialize starfield with falling stars
+        function initStarfield() {
+            const starfield = document.querySelector('.starfield');
+            if (!starfield) return;
+            for (let i = 0; i < 40; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.animationDuration = (10 + Math.random() * 15) + 's';
+                star.style.animationDelay = Math.random() * 15 + 's';
+                starfield.appendChild(star);
+            }
+        }
+
+        // Check if user needs onboarding (no username set)
+        function checkOnboarding() {
+            if (currentUser && currentProfile && !currentProfile.username) {
+                showOnboardingModal();
+            }
+        }
+
         window.addEventListener('load', async () => {
             new StarfallManager();
 
-            if (!supabase) {
+            if (!db) {
                 console.warn('Running in demo mode - no Supabase');
                 updateAuthUI();
                 return;
             }
 
-            // Check auth state
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-                currentUser = session.user;
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', session.user.id)
-                    .single();
-                currentProfile = profile;
+            // Test Supabase connection first
+            dbValid = await testSupabaseConnection();
+            if (!dbValid) {
+                console.warn('Running in demo mode - Supabase connection failed');
+                updateAuthUI();
+                return;
             }
-            updateAuthUI();
 
-            // Listen for auth changes
-            supabase.auth.onAuthStateChange(async (event, session) => {
-                if (session) {
+            try {
+                // Check auth state
+                const { data: { session }, error: sessionError } = await db.auth.getSession();
+                if (sessionError) {
+                    console.warn('Auth session error:', sessionError.message);
+                } else if (session) {
                     currentUser = session.user;
-                    const { data: profile } = await supabase
+                    const { data: profile } = await db
                         .from('profiles')
                         .select('*')
                         .eq('id', session.user.id)
                         .single();
                     currentProfile = profile;
-                } else {
-                    currentUser = null;
-                    currentProfile = null;
+
+                    // Check if user needs to complete onboarding
+                    checkOnboarding();
+
+                    // Check vote status
+                    await checkUserVoteStatus();
                 }
                 updateAuthUI();
-            });
 
-            // Load data
-            await loadDashboardData();
+                // Listen for auth changes
+                db.auth.onAuthStateChange(async (event, session) => {
+                    if (session) {
+                        currentUser = session.user;
+                        const { data: profile } = await db
+                            .from('profiles')
+                            .select('*')
+                            .eq('id', session.user.id)
+                            .single();
+                        currentProfile = profile;
+
+                        // Check if new user needs onboarding
+                        if (event === 'SIGNED_IN') {
+                            checkOnboarding();
+                        }
+
+                        // Check vote status
+                        await checkUserVoteStatus();
+                    } else {
+                        currentUser = null;
+                        currentProfile = null;
+                        window.hasVotedThisMonth = false;
+                        window.votedSubmissionId = null;
+                    }
+                    updateAuthUI();
+                    // Reload dashboard data after auth state changes
+                    await loadDashboardData();
+                });
+
+                // Load data
+                await loadDashboardData();
+                
+                // Initialize roadmap if on that section
+                initRoadmapRealtime();
+            } catch (err) {
+                console.error('Supabase load error:', err);
+                updateAuthUI();
+            }
         });
+
+        // =============================================
+        // ROADMAP FEEDBACK SYSTEM
+        // =============================================
+
+        // Browser fingerprint for anonymous voting
+        let userFingerprint = null;
+        let roadmapCurrentTab = 'items';
+        let roadmapSubscriptions = [];
+
+        async function getUserFingerprint() {
+            if (userFingerprint) return userFingerprint;
+            
+            // Generate a simple fingerprint from browser characteristics
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = 'top';
+            ctx.font = '14px Arial';
+            ctx.fillText('fingerprint', 0, 0);
+            const canvasData = canvas.toDataURL();
+            
+            const components = [
+                navigator.userAgent,
+                navigator.language,
+                screen.width + 'x' + screen.height,
+                screen.colorDepth,
+                new Date().getTimezoneOffset(),
+                canvasData.slice(-50)
+            ];
+            
+            // Simple hash function
+            const str = components.join('|');
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            
+            userFingerprint = 'fp_' + Math.abs(hash).toString(36);
+            
+            // Store in localStorage as backup
+            const stored = localStorage.getItem('skeppa_fingerprint');
+            if (stored) {
+                userFingerprint = stored;
+            } else {
+                localStorage.setItem('skeppa_fingerprint', userFingerprint);
+            }
+            
+            return userFingerprint;
+        }
+
+        // Switch between roadmap items and suggestions tabs
+        function setRoadmapTab(tab) {
+            roadmapCurrentTab = tab;
+            const itemsContainer = document.getElementById('roadmap-items-container');
+            const suggestionsContainer = document.getElementById('roadmap-suggestions-container');
+            const itemsTab = document.getElementById('roadmap-tab-items');
+            const suggestionsTab = document.getElementById('roadmap-tab-suggestions');
+            
+            if (tab === 'items') {
+                itemsContainer.classList.remove('hidden');
+                suggestionsContainer.classList.add('hidden');
+                itemsTab.className = 'px-6 py-2 rounded-full text-sm font-medium transition-all leaderboard-toggle-active';
+                suggestionsTab.className = 'px-6 py-2 rounded-full text-sm font-medium transition-all leaderboard-toggle-inactive';
+                loadRoadmapItems();
+            } else {
+                itemsContainer.classList.add('hidden');
+                suggestionsContainer.classList.remove('hidden');
+                itemsTab.className = 'px-6 py-2 rounded-full text-sm font-medium transition-all leaderboard-toggle-inactive';
+                suggestionsTab.className = 'px-6 py-2 rounded-full text-sm font-medium transition-all leaderboard-toggle-active';
+                loadSuggestions();
+            }
+        }
+
+        // Load roadmap items from Supabase
+        async function loadRoadmapItems() {
+            const container = document.getElementById('roadmap-items-container');
+            if (!container || !db || !dbValid) return;
+            
+            const fp = await getUserFingerprint();
+            
+            try {
+                // Get all items
+                const { data: items, error } = await db
+                    .from('roadmap_items')
+                    .select('*')
+                    .order('priority', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Get user's votes
+                const { data: userVotes } = await db
+                    .from('roadmap_votes')
+                    .select('item_id, vote')
+                    .eq('user_fingerprint', fp);
+                
+                const voteMap = {};
+                (userVotes || []).forEach(v => { voteMap[v.item_id] = v.vote; });
+                
+                if (!items || items.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-[var(--text-secondary)]">
+                            <i class="ph-map-trifold text-4xl mb-4 opacity-50"></i>
+                            <p>Inga roadmap-items ännu.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                // Group by status
+                const statusOrder = ['in_progress', 'planned', 'considering', 'completed'];
+                const statusLabels = {
+                    'planned': 'Planerat',
+                    'in_progress': 'Pågående',
+                    'completed': 'Klart',
+                    'considering': 'Övervägs'
+                };
+                
+                let html = '';
+                statusOrder.forEach(status => {
+                    const statusItems = items.filter(i => i.status === status);
+                    if (statusItems.length === 0) return;
+                    
+                    html += `
+                        <div class="mb-8">
+                            <h3 class="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                                <span class="status-badge status-${status}">${statusLabels[status]}</span>
+                                <span class="text-[var(--text-secondary)] text-sm font-normal">(${statusItems.length})</span>
+                            </h3>
+                            <div class="space-y-3">
+                    `;
+                    
+                    statusItems.forEach(item => {
+                        const userVote = voteMap[item.id] || 0;
+                        const netVotes = (item.votes_up || 0) - (item.votes_down || 0);
+                        
+                        html += `
+                            <div class="roadmap-item" data-item-id="${item.id}">
+                                <div class="flex items-start gap-4">
+                                    <div class="flex flex-col gap-1">
+                                        <button onclick="voteRoadmapItem('${item.id}', 1)" 
+                                                class="vote-btn ${userVote === 1 ? 'active-up' : ''}" 
+                                                data-vote-type="up">
+                                            <i class="ph-thumbs-up"></i>
+                                            <span class="vote-count-up">${item.votes_up || 0}</span>
+                                        </button>
+                                        <button onclick="voteRoadmapItem('${item.id}', -1)" 
+                                                class="vote-btn ${userVote === -1 ? 'active-down' : ''}"
+                                                data-vote-type="down">
+                                            <i class="ph-thumbs-down"></i>
+                                            <span class="vote-count-down">${item.votes_down || 0}</span>
+                                        </button>
+                                    </div>
+                                    <div class="flex-grow">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <h4 class="font-bold text-[var(--text-primary)]">${escapeHtml(item.title)}</h4>
+                                            <span class="category-badge">${item.category}</span>
+                                        </div>
+                                        <p class="text-sm text-[var(--text-secondary)]">${escapeHtml(item.description || '')}</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="text-lg font-bold ${netVotes > 0 ? 'text-green-400' : netVotes < 0 ? 'text-red-400' : 'text-[var(--text-secondary)]'}">
+                                            ${netVotes > 0 ? '+' : ''}${netVotes}
+                                        </div>
+                                        <div class="text-xs text-[var(--text-secondary)]">netto</div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    html += '</div></div>';
+                });
+                
+                container.innerHTML = html;
+                
+            } catch (err) {
+                console.error('Failed to load roadmap:', err);
+                container.innerHTML = `
+                    <div class="text-center py-8 text-red-400">
+                        <i class="ph-warning text-4xl mb-2"></i>
+                        <p>Kunde inte ladda roadmap.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Vote on a roadmap item
+        async function voteRoadmapItem(itemId, voteValue) {
+            if (!db || !dbValid) return;
+            
+            const fp = await getUserFingerprint();
+            
+            try {
+                // Check existing vote
+                const { data: existing } = await db
+                    .from('roadmap_votes')
+                    .select('id, vote')
+                    .eq('item_id', itemId)
+                    .eq('user_fingerprint', fp)
+                    .single();
+                
+                if (existing) {
+                    if (existing.vote === voteValue) {
+                        // Same vote - remove it (toggle off)
+                        await db.from('roadmap_votes').delete().eq('id', existing.id);
+                    } else {
+                        // Different vote - update it
+                        await db.from('roadmap_votes')
+                            .update({ vote: voteValue })
+                            .eq('id', existing.id);
+                    }
+                } else {
+                    // New vote
+                    await db.from('roadmap_votes').insert({
+                        item_id: itemId,
+                        user_fingerprint: fp,
+                        vote: voteValue
+                    });
+                }
+                
+                // Reload to show updated counts
+                await loadRoadmapItems();
+                
+            } catch (err) {
+                console.error('Vote failed:', err);
+                showToast('Kunde inte rösta. Försök igen.', 'error');
+            }
+        }
+
+        // Load user suggestions
+        async function loadSuggestions() {
+            const container = document.getElementById('suggestions-list');
+            if (!container || !db || !dbValid) return;
+            
+            const fp = await getUserFingerprint();
+            
+            try {
+                const { data: suggestions, error } = await db
+                    .from('roadmap_suggestions')
+                    .select('*')
+                    .order('upvotes', { ascending: false });
+                
+                if (error) throw error;
+                
+                // Get user's votes on suggestions
+                const { data: userVotes } = await db
+                    .from('suggestion_votes')
+                    .select('suggestion_id')
+                    .eq('user_fingerprint', fp);
+                
+                const votedSet = new Set((userVotes || []).map(v => v.suggestion_id));
+                
+                if (!suggestions || suggestions.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-12 text-[var(--text-secondary)]">
+                            <i class="ph-lightbulb text-4xl mb-4 opacity-50"></i>
+                            <p>Inga förslag ännu. Bli först att föreslå en feature!</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const statusLabels = {
+                    'pending': 'Väntar',
+                    'approved': 'Godkänd',
+                    'rejected': 'Avvisad',
+                    'implemented': 'Implementerad'
+                };
+                
+                container.innerHTML = suggestions.map(s => `
+                    <div class="suggestion-item" data-suggestion-id="${s.id}">
+                        <div class="flex items-start gap-4">
+                            <button onclick="voteSuggestion('${s.id}')" 
+                                    class="upvote-btn ${votedSet.has(s.id) ? 'voted' : ''}">
+                                <i class="ph-arrow-fat-up text-lg"></i>
+                                <span class="upvote-count text-sm font-bold">${s.upvotes || 0}</span>
+                            </button>
+                            <div class="flex-grow">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <h4 class="font-bold text-[var(--text-primary)]">${escapeHtml(s.title)}</h4>
+                                    <span class="status-badge status-${s.status === 'approved' ? 'in_progress' : s.status === 'implemented' ? 'completed' : 'considering'}">
+                                        ${statusLabels[s.status] || s.status}
+                                    </span>
+                                </div>
+                                ${s.description ? `<p class="text-sm text-[var(--text-secondary)]">${escapeHtml(s.description)}</p>` : ''}
+                                <div class="text-xs text-[var(--text-secondary)] mt-2">
+                                    ${new Date(s.created_at).toLocaleDateString('sv-SE')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+            } catch (err) {
+                console.error('Failed to load suggestions:', err);
+                container.innerHTML = `
+                    <div class="text-center py-8 text-red-400">
+                        <i class="ph-warning text-4xl mb-2"></i>
+                        <p>Kunde inte ladda förslag.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Vote on a suggestion (upvote only, toggle)
+        async function voteSuggestion(suggestionId) {
+            if (!db || !dbValid) return;
+            
+            const fp = await getUserFingerprint();
+            
+            try {
+                // Check existing vote
+                const { data: existing } = await db
+                    .from('suggestion_votes')
+                    .select('id')
+                    .eq('suggestion_id', suggestionId)
+                    .eq('user_fingerprint', fp)
+                    .single();
+                
+                if (existing) {
+                    // Remove vote (toggle off)
+                    await db.from('suggestion_votes').delete().eq('id', existing.id);
+                } else {
+                    // Add vote
+                    await db.from('suggestion_votes').insert({
+                        suggestion_id: suggestionId,
+                        user_fingerprint: fp
+                    });
+                }
+                
+                // Reload
+                await loadSuggestions();
+                
+            } catch (err) {
+                console.error('Vote failed:', err);
+                showToast('Kunde inte rösta. Försök igen.', 'error');
+            }
+        }
+
+        // Suggestion modal
+        function openSuggestionModal() {
+            document.getElementById('suggestion-modal').classList.add('active');
+        }
+        
+        function closeSuggestionModal() {
+            document.getElementById('suggestion-modal').classList.remove('active');
+            document.getElementById('suggestion-form').reset();
+        }
+
+        // Submit a new suggestion
+        async function handleSuggestion(event) {
+            event.preventDefault();
+            if (!db || !dbValid) return;
+            
+            const title = document.getElementById('suggestion-title').value.trim();
+            const description = document.getElementById('suggestion-description').value.trim();
+            const submitBtn = document.getElementById('suggestion-submit');
+            const btnText = document.getElementById('suggestion-btn-text');
+            const spinner = document.getElementById('suggestion-spinner');
+            
+            if (!title) {
+                showToast('Ange en titel', 'error');
+                return;
+            }
+            
+            const fp = await getUserFingerprint();
+            
+            // Show loading
+            submitBtn.disabled = true;
+            btnText.classList.add('hidden');
+            spinner.classList.remove('hidden');
+            
+            try {
+                const { error } = await db.from('roadmap_suggestions').insert({
+                    user_fingerprint: fp,
+                    title: title,
+                    description: description || null
+                });
+                
+                if (error) throw error;
+                
+                showToast('Förslag skickat! Tack för din feedback.', 'success');
+                closeSuggestionModal();
+                await loadSuggestions();
+                
+            } catch (err) {
+                console.error('Failed to submit suggestion:', err);
+                showToast('Kunde inte skicka förslag. Försök igen.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                btnText.classList.remove('hidden');
+                spinner.classList.add('hidden');
+            }
+        }
+
+        // Realtime subscriptions for live updates
+        function initRoadmapRealtime() {
+            if (!db || !dbValid) return;
+            
+            // Clean up old subscriptions
+            roadmapSubscriptions.forEach(sub => sub.unsubscribe());
+            roadmapSubscriptions = [];
+            
+            // Subscribe to roadmap_items changes
+            const itemsSub = db
+                .channel('roadmap_items_changes')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'roadmap_items' 
+                }, () => {
+                    if (roadmapCurrentTab === 'items') {
+                        loadRoadmapItems();
+                    }
+                })
+                .subscribe();
+            
+            // Subscribe to roadmap_votes changes
+            const votesSub = db
+                .channel('roadmap_votes_changes')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'roadmap_votes' 
+                }, () => {
+                    if (roadmapCurrentTab === 'items') {
+                        loadRoadmapItems();
+                    }
+                })
+                .subscribe();
+            
+            // Subscribe to suggestions changes
+            const suggestionsSub = db
+                .channel('roadmap_suggestions_changes')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'roadmap_suggestions' 
+                }, () => {
+                    if (roadmapCurrentTab === 'suggestions') {
+                        loadSuggestions();
+                    }
+                })
+                .subscribe();
+            
+            // Subscribe to suggestion_votes changes
+            const suggestionVotesSub = db
+                .channel('suggestion_votes_changes')
+                .on('postgres_changes', { 
+                    event: '*', 
+                    schema: 'public', 
+                    table: 'suggestion_votes' 
+                }, () => {
+                    if (roadmapCurrentTab === 'suggestions') {
+                        loadSuggestions();
+                    }
+                })
+                .subscribe();
+            
+            roadmapSubscriptions = [itemsSub, votesSub, suggestionsSub, suggestionVotesSub];
+        }
+
+        // Override showSection to load roadmap when needed
+        const originalShowSection = window.showSection;
+        window.showSection = function(sectionId) {
+            originalShowSection(sectionId);
+            if (sectionId === 'roadmap') {
+                loadRoadmapItems();
+            }
+        };
 
     </script>
 </body>
