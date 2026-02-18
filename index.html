@@ -2498,6 +2498,7 @@
                         }
                     } catch (uploadErr) {
                         console.warn('Screenshot upload failed:', uploadErr);
+                        showToast('Bilden kunde inte laddas upp, men projektet är skeppat!', 'warning');
                     }
                 }
 
